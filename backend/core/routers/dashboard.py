@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from fastapi import APIRouter
-from api.models.schemas import DashboardResponse
+from core.models.schemas import DashboardResponse
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 

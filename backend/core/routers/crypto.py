@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
-from api.models.schemas import CryptoResponse, CryptoHolding
+from core.models.schemas import CryptoResponse, CryptoHolding
 
 router = APIRouter(prefix="/api/crypto", tags=["Crypto"])
 
