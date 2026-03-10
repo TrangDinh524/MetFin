@@ -63,6 +63,7 @@ const stats = [
 
 export function LoginPage() {
   const loginWithGoogle = useFinanceStore((s) => s.loginWithGoogle)
+  const loginAsGuest = useFinanceStore((s) => s.loginAsGuest)
   const authLoading = useFinanceStore((s) => s.authLoading)
 
   return (
@@ -73,18 +74,26 @@ export function LoginPage() {
         <span className="text-[20px] font-extrabold tracking-tight text-[#1a3a4a]">
           Met<span className="text-[#55b2c9]">Fin</span>
         </span>
-        <div className="scale-90 origin-right">
+        <div className="flex items-center gap-2 scale-90 origin-right">
           {authLoading ? (
             <span className="text-[12px] text-[#7a9fad]">Signing in…</span>
           ) : (
-            <GoogleLogin
-              onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
-              onError={() => console.error('Google login failed')}
-              shape="pill"
-              theme="outline"
-              size="medium"
-              text="signin_with"
-            />
+            <>
+              <GoogleLogin
+                onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
+                onError={() => console.error('Google login failed')}
+                shape="pill"
+                theme="outline"
+                size="medium"
+                text="signin_with"
+              />
+              <button
+                onClick={loginAsGuest}
+                className="rounded-full border border-[#cae7ee] bg-white px-3.5 py-1.5 text-[12px] font-semibold text-[#3d96ad] transition hover:bg-[#f0f8fa] hover:border-[#3d96ad]"
+              >
+                Guest
+              </button>
+            </>
           )}
         </div>
       </nav>
@@ -113,16 +122,29 @@ export function LoginPage() {
             {authLoading ? (
               <div className="text-[13px] text-[#7a9fad]">Signing in…</div>
             ) : (
-              <GoogleLogin
-                onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
-                onError={() => console.error('Google login failed')}
-                useOneTap
-                shape="rectangular"
-                theme="outline"
-                size="large"
-                text="signin_with"
-                width="260"
-              />
+              <>
+                <GoogleLogin
+                  onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
+                  onError={() => console.error('Google login failed')}
+                  useOneTap
+                  shape="rectangular"
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  width="260"
+                />
+                <div className="flex w-full items-center gap-2">
+                  <div className="h-px flex-1 bg-[#e8f0f3]" />
+                  <span className="text-[11px] text-[#aac4ce]">or</span>
+                  <div className="h-px flex-1 bg-[#e8f0f3]" />
+                </div>
+                <button
+                  onClick={loginAsGuest}
+                  className="w-[260px] rounded-md border border-[#cae7ee] bg-[#f7fbfc] py-2.5 text-[13px] font-semibold text-[#3d96ad] transition hover:bg-[#eaf5f8] hover:border-[#3d96ad]"
+                >
+                  Continue as Guest
+                </button>
+              </>
             )}
             <p className="text-[11px] text-[#aac4ce]">No credit card required · Private by design</p>
           </div>
@@ -178,21 +200,29 @@ export function LoginPage() {
         <p className="mb-6 text-[13px] text-[rgba(255,255,255,0.7)]">
           Sign in with Google and get your full financial picture in under 30 seconds.
         </p>
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-3">
           {authLoading ? (
             <span className="text-[13px] text-white/60">Signing in…</span>
           ) : (
-            <div className="rounded-xl overflow-hidden shadow-lg">
-              <GoogleLogin
-                onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
-                onError={() => console.error('Google login failed')}
-                shape="rectangular"
-                theme="filled_blue"
-                size="large"
-                text="signup_with"
-                width="260"
-              />
-            </div>
+            <>
+              <div className="rounded-xl overflow-hidden shadow-lg">
+                <GoogleLogin
+                  onSuccess={({ credential }) => { if (credential) loginWithGoogle(credential) }}
+                  onError={() => console.error('Google login failed')}
+                  shape="rectangular"
+                  theme="filled_blue"
+                  size="large"
+                  text="signup_with"
+                  width="260"
+                />
+              </div>
+              <button
+                onClick={loginAsGuest}
+                className="w-[260px] rounded-xl border border-white/30 bg-white/10 py-2.5 text-[13px] font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Continue as Guest
+              </button>
+            </>
           )}
         </div>
       </section>

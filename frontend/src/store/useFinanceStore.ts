@@ -19,6 +19,7 @@ interface FinanceState {
   user: GoogleUser | null
   authLoading: boolean
   loginWithGoogle: (credential: string) => Promise<void>
+  loginAsGuest: () => void
   logout: () => void
 
   section: SectionId
@@ -79,6 +80,16 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     } finally {
       set({ authLoading: false })
     }
+  },
+  loginAsGuest: () => {
+    const guest: GoogleUser = {
+      email: 'guest@metfin.app',
+      name: 'Guest User',
+      picture: '',
+      sub: 'guest',
+    }
+    localStorage.setItem('metfin_user', JSON.stringify(guest))
+    set({ user: guest })
   },
   logout: () => {
     localStorage.removeItem('metfin_user')
