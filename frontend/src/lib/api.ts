@@ -225,11 +225,21 @@ export interface GoogleUser {
   sub: string
 }
 
+export interface HoldingCreateInput {
+  name: string
+  ticker: string
+  shares: number
+  currentPrice: number
+  costBasis: number
+  sector: string
+}
+
 export const api = {
   loginWithGoogle: (credential: string) =>
     post<GoogleUser>('/auth/google', { credential }),
   getDashboard: () => get<DashboardData>('/dashboard'),
   getInvestments: () => get<InvestmentData>('/investments'),
+  addHolding: (body: HoldingCreateInput) => post<InvestmentData>('/investments', body),
   getBanking: () => get<BankingData>('/banking'),
   getCrypto: () => get<CryptoData>('/crypto'),
   getWellness: () => get<WellnessData>('/wellness'),

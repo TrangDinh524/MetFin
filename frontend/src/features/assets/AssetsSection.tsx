@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, ArrowUpRight, Activity, Plus } from 'lucide-react'
+import { TrendingUp, ArrowUpRight, Activity, Plus, X } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import type { SectorItem } from '../../types'
+import type { HoldingCreateInput } from '../../lib/api'
 import { useFinanceStore } from '../../store/useFinanceStore'
 
 export function AssetsSection() {
@@ -19,6 +20,26 @@ export function AssetsSection() {
   const fetchInvestments = useFinanceStore((s) => s.fetchInvestments)
   const fetchBanking = useFinanceStore((s) => s.fetchBanking)
   const fetchCrypto = useFinanceStore((s) => s.fetchCrypto)
+  const addHolding = useFinanceStore((s) => s.addHolding)
+
+  const [showAddModal, setShowAddModal] = useState(false)
+  const emptyForm = (): HoldingCreateInput => ({
+    name: '', ticker: '', shares: 0, currentPrice: 0, costBasis: 0, sector: 'Tech',
+  })
+  const [form, setForm] = useState<HoldingCreateInput>(emptyForm)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleAddHolding(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await addHolding(form)
+      setShowAddModal(false)
+      setForm(emptyForm())
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     fetchInvestments()
@@ -120,7 +141,7 @@ export function AssetsSection() {
                 <div className="text-sm font-semibold text-[#0d1117]">
                   Holdings
                 </div>
-                <AddButton label="Add Holding" color={COLORS.primary} />
+                <AddButton label="Add Holding" color={COLORS.primary} onClick={() => setShowAddModal(true)} />
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -248,6 +269,146 @@ export function AssetsSection() {
             </button>
           </div>
         </Card>
+      )}
+
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40"
+            >
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+
+            <div className="mb-5">
+              <div className="text-base font-semibold text-[#0d1117]">Add Holding</div>
+              <div className="mt-0.5 text-[11px] text-[#7a9fad]">Manually record a public investment</div>
+            </div>
+
+            <form onSubmit={handleAddHolding} className="flex flex-col gap-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Asset Name</label>
+                  <input
+                    required
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="e.g. Apple Inc."
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Ticker</label>
+                  <input
+                    required
+                    className="rounded-lg border px-3 py-2 text-[13px] font-bold uppercase outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: COLORS.primary }}
+                    placeholder="AAPL"
+                    value={form.ticker}
+                    onChange={(e) => setForm({ ...form, ticker: e.target.value.toUpperCase() })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Sector</label>
+                  <select
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={form.sector}
+                    onChange={(e) => setForm({ ...form, sector: e.target.value })}
+                  >
+                    {['Tech', 'ETF', 'Bonds', 'Finance', 'Healthcare', 'Energy', 'Other'].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Shares</label>
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="0"
+                    value={form.shares || ''}
+                    onChange={(e) => setForm({ ...form, shares: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Price / Share ($)</label>
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="0.00"
+                    value={form.currentPrice || ''}
+                    onChange={(e) => setForm({ ...form, currentPrice: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="col-span-2 flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Total Cost Basis ($)</label>
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="0.00"
+                    value={form.costBasis || ''}
+                    onChange={(e) => setForm({ ...form, costBasis: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              {form.shares > 0 && form.currentPrice > 0 && (
+                <div
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-[12px]"
+                  style={{ background: `${COLORS.primary}12`, border: `1px solid ${COLORS.primary}30` }}
+                >
+                  <span style={{ color: COLORS.textDim }}>Estimated Value</span>
+                  <span className="font-semibold" style={{ color: COLORS.primary }}>
+                    {fmt(form.shares * form.currentPrice)}
+                  </span>
+                </div>
+              )}
+
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                  style={{ borderColor: COLORS.border }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(85,178,201,0.28)] disabled:opacity-60"
+                  style={{ background: COLORS.primary }}
+                >
+                  {submitting ? 'Adding…' : 'Add Holding'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

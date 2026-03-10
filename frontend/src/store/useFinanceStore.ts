@@ -11,6 +11,7 @@ import {
   type InsightsData,
   type ScenarioListData,
   type ScenarioRunData,
+  type HoldingCreateInput,
 } from '../lib/api'
 
 interface FinanceState {
@@ -42,6 +43,7 @@ interface FinanceState {
   // Fetch actions
   fetchDashboard: () => Promise<void>
   fetchInvestments: () => Promise<void>
+  addHolding: (body: HoldingCreateInput) => Promise<void>
   fetchBanking: () => Promise<void>
   fetchCrypto: () => Promise<void>
   fetchWellness: () => Promise<void>
@@ -119,6 +121,15 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     set({ loading: true })
     try {
       const data = await api.getInvestments()
+      set({ investments: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  addHolding: async (body) => {
+    set({ loading: true })
+    try {
+      const data = await api.addHolding(body)
       set({ investments: data })
     } finally {
       set({ loading: false })

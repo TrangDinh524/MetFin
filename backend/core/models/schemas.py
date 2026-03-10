@@ -37,6 +37,15 @@ class InvestmentResponse(BaseModel):
     holdings: List[Holding]
 
 
+class HoldingCreate(BaseModel):
+    name: str
+    ticker: str
+    shares: float
+    currentPrice: float
+    costBasis: float
+    sector: str
+
+
 # ── Banking models ─────────────────────────────────────────────────
 class BankAccount(BaseModel):
     id: str
