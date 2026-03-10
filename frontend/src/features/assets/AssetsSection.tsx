@@ -28,14 +28,18 @@ export function AssetsSection() {
   })
   const [form, setForm] = useState<HoldingCreateInput>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
 
   async function handleAddHolding(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setAddError(null)
     try {
       await addHolding(form)
       setShowAddModal(false)
       setForm(emptyForm())
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Failed to add holding. Is the backend running?')
     } finally {
       setSubmitting(false)
     }
@@ -388,10 +392,19 @@ export function AssetsSection() {
                 </div>
               )}
 
+              {addError && (
+                <div
+                  className="rounded-lg px-3 py-2 text-[12px]"
+                  style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}
+                >
+                  {addError}
+                </div>
+              )}
+
               <div className="mt-1 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => { setShowAddModal(false); setAddError(null) }}
                   className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
                   style={{ borderColor: COLORS.border }}
                 >

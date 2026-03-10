@@ -1,10 +1,10 @@
 {
   "summary": {
-    "totalValue": 389120,
+    "totalValue": 242819,
     "todayGain": 1247,
     "todayGainPct": 0.32,
-    "allTimeGain": 42100,
-    "allTimeGainPct": 12.1,
+    "allTimeGain": 23277,
+    "allTimeGainPct": 10.6,
     "liquidity": "Immediate",
     "volatility": "High",
     "allocation": {
@@ -18,10 +18,10 @@
       "International": 18
     },
     "sectors": {
-      "Technology": 65,
-      "ETF Blended": 19,
-      "Bonds": 9,
-      "Other": 7
+      "Tech": 53.9,
+      "ETF": 25.9,
+      "Bonds": 9.0,
+      "Cash": 11.2
     }
   },
   "holdings": [
