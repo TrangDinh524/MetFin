@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "totalBalance": 102400,
+    "accountTypeMix": {
+      "Checking": 35,
+      "Savings": 45,
+      "CD": 15,
+      "MoneyMarket": 5
+    },
+    "fdicCovered": 102400,
+    "fdicExposed": 0,
+    "fdicCoveredPct": 100,
+    "liquidity": "Immediate",
+    "volatility": "None"
+  },
+  "accounts": [
+    {
+      "id": "b1",
+      "bankName": "Chase Bank",
+      "accountType": "Checking",
+      "balance": 18500,
+      "apy": 0.01,
+      "monthlyAvgBalance": 17200,
+      "fdicInsured": 18500,
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    },
+    {
+      "id": "b2",
+      "bankName": "Chase Bank",
+      "accountType": "Savings",
+      "balance": 24900,
+      "apy": 4.25,
+      "monthlyAvgBalance": 24100,
+      "fdicInsured": 24900,
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    },
+    {
+      "id": "b3",
+      "bankName": "Marcus by Goldman Sachs",
+      "accountType": "Savings",
+      "balance": 21400,
+      "apy": 4.4,
+      "monthlyAvgBalance": 20800,
+      "fdicInsured": 21400,
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    },
+    {
+      "id": "b4",
+      "bankName": "Ally Bank",
+      "accountType": "CD",
+      "balance": 15000,
+      "apy": 4.75,
+      "monthlyAvgBalance": 15000,
+      "fdicInsured": 15000,
+      "maturityDate": "2026-09-15",
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    },
+    {
+      "id": "b5",
+      "bankName": "Capital One",
+      "accountType": "Checking",
+      "balance": 17200,
+      "apy": 0.1,
+      "monthlyAvgBalance": 16500,
+      "fdicInsured": 17200,
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    },
+    {
+      "id": "b6",
+      "bankName": "Wealthfront",
+      "accountType": "MoneyMarket",
+      "balance": 5400,
+      "apy": 4.55,
+      "monthlyAvgBalance": 5200,
+      "fdicInsured": 5400,
+      "lastUpdated": "2026-03-10T09:00:00Z"
+    }
+  ]
+}

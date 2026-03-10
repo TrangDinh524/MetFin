@@ -1,0 +1,102 @@
+{
+  "summary": {
+    "totalValue": 122880,
+    "assetMix": {
+      "Bitcoin": 52,
+      "Ethereum": 28,
+      "Stablecoins": 10,
+      "Altcoins": 8,
+      "NFTs": 2
+    },
+    "walletsTracked": 3,
+    "liquidity": "High",
+    "volatility": "Extreme"
+  },
+  "holdings": [
+    {
+      "id": "c1",
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "quantity": 0.72,
+      "currentPrice": 88750,
+      "value": 63900,
+      "costBasis": 48000,
+      "gain": 15900,
+      "gainPct": 33.1,
+      "walletAddress": "bc1q9h...7k3m",
+      "chain": "Bitcoin",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    },
+    {
+      "id": "c2",
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "quantity": 8.5,
+      "currentPrice": 4047,
+      "value": 34400,
+      "costBasis": 25500,
+      "gain": 8900,
+      "gainPct": 34.9,
+      "walletAddress": "0x1a2b...8f9e",
+      "chain": "Ethereum",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    },
+    {
+      "id": "c3",
+      "name": "USDC",
+      "symbol": "USDC",
+      "quantity": 12300,
+      "currentPrice": 1.0,
+      "value": 12300,
+      "costBasis": 12300,
+      "gain": 0,
+      "gainPct": 0,
+      "walletAddress": "0x1a2b...8f9e",
+      "chain": "Ethereum",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    },
+    {
+      "id": "c4",
+      "name": "Solana",
+      "symbol": "SOL",
+      "quantity": 42,
+      "currentPrice": 185.5,
+      "value": 7791,
+      "costBasis": 5040,
+      "gain": 2751,
+      "gainPct": 54.6,
+      "walletAddress": "5xKp...9mNv",
+      "chain": "Solana",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    },
+    {
+      "id": "c5",
+      "name": "Chainlink",
+      "symbol": "LINK",
+      "quantity": 150,
+      "currentPrice": 16.6,
+      "value": 2490,
+      "costBasis": 1800,
+      "gain": 690,
+      "gainPct": 38.3,
+      "walletAddress": "0x1a2b...8f9e",
+      "chain": "Ethereum",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    },
+    {
+      "id": "c6",
+      "name": "CryptoPunks #4287",
+      "symbol": "NFT",
+      "quantity": 1,
+      "currentPrice": 1999,
+      "value": 1999,
+      "costBasis": 2400,
+      "gain": -401,
+      "gainPct": -16.7,
+      "walletAddress": "0x1a2b...8f9e",
+      "chain": "Ethereum",
+      "type": "NFT",
+      "lastUpdated": "2026-03-10T12:30:00Z"
+    }
+  ]
+}
