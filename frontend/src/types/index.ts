@@ -15,6 +15,7 @@ export type SectionId =
   | 'debt-student'
   | 'debt-other'
   | 'scenarios'
+  | 'advisor'
   | 'insights'
   | 'settings'
   | 'settings-account'

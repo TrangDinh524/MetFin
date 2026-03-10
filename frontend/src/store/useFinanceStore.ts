@@ -13,6 +13,7 @@ import {
   type ScenarioRunData,
   type HoldingCreateInput,
   type DebtCreateInput,
+  type ChatMessage,
 } from '../lib/api'
 
 interface FinanceState {
@@ -43,6 +44,12 @@ interface FinanceState {
   scenarioList: ScenarioListData | null
   scenarioResult: ScenarioRunData | null
   scenarioLoading: boolean
+
+  // Advisor chat
+  chatMessages: ChatMessage[]
+  chatLoading: boolean
+  sendChatMessage: (content: string) => Promise<void>
+  clearChat: () => void
 
   // Fetch actions
   fetchDashboard: () => Promise<void>
@@ -129,6 +136,31 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   scenarioList: null,
   scenarioResult: null,
   scenarioLoading: false,
+
+  chatMessages: [],
+  chatLoading: false,
+  sendChatMessage: async (content: string) => {
+    const userMsg: ChatMessage = { role: 'user', content }
+    set((s) => ({
+      chatMessages: [...s.chatMessages, userMsg],
+      chatLoading: true,
+    }))
+    try {
+      const allMessages = [...useFinanceStore.getState().chatMessages]
+      const data = await api.chatWithAdvisor(allMessages)
+      const assistantMsg: ChatMessage = { role: 'assistant', content: data.reply }
+      set((s) => ({ chatMessages: [...s.chatMessages, assistantMsg] }))
+    } catch (err) {
+      const errorMsg: ChatMessage = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please make sure the OPENAI_API_KEY environment variable is set and try again.',
+      }
+      set((s) => ({ chatMessages: [...s.chatMessages, errorMsg] }))
+    } finally {
+      set({ chatLoading: false })
+    }
+  },
+  clearChat: () => set({ chatMessages: [] }),
 
   fetchDashboard: async () => {
     set({ loading: true })

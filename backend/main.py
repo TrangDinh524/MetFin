@@ -1,8 +1,12 @@
 """MetFin Backend — FastAPI entry point."""
+from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios, auth, debt
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+from core.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios, auth, debt, advisor
 
 app = FastAPI(
     title="MetFin API",
@@ -32,6 +36,7 @@ app.include_router(debt.router)
 app.include_router(wellness.router)
 app.include_router(insights.router)
 app.include_router(scenarios.router)
+app.include_router(advisor.router)
 
 
 @app.get("/")

@@ -265,6 +265,15 @@ export interface DebtListData {
   items: ApiDebtItemWithId[]
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface AdvisorChatResponse {
+  reply: string
+}
+
 export const api = {
   loginWithGoogle: (credential: string) =>
     post<GoogleUser>('/auth/google', { credential }),
@@ -281,4 +290,7 @@ export const api = {
   getInsights: () => get<InsightsData>('/insights'),
   getScenarios: () => get<ScenarioListData>('/scenarios'),
   runScenario: (id: string, body?: unknown) => post<ScenarioRunData>(`/scenarios/${id}`, body),
+  chatWithAdvisor: (messages: ChatMessage[]) =>
+    post<AdvisorChatResponse>('/advisor/chat', { messages }),
+  getAdvisorStatus: () => get<{ available: boolean }>('/advisor/status'),
 }

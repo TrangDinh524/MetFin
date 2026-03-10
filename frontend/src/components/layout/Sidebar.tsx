@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart2,
+  Bot,
   Zap,
   Settings,
   ArrowUpRight,
@@ -39,6 +40,7 @@ const nav: NavItem[] = [
     ek: 'debt'
   },
   { id: 'scenarios', Icon: BarChart2, label: 'Scenario Lab' },
+  { id: 'advisor', Icon: Bot, label: 'AI Advisor' },
   { id: 'insights', Icon: Zap, label: 'Insights & Actions', badge: 2 },
   {
     id: 'settings',

@@ -7,6 +7,9 @@ __pycache__/
 node_modules/
 frontend/dist/
 
+# Env
+.env
+
 # IDE
 .DS_Store
 .vscode/

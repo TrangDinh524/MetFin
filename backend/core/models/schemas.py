@@ -248,3 +248,17 @@ class ScenarioRunRequest(BaseModel):
     # Retirement inputs
     annualReturnPct: Optional[float] = None
     years: Optional[int] = None
+
+
+# ── Advisor models ─────────────────────────────────────────────────
+class ChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class AdvisorChatRequest(BaseModel):
+    messages: List[ChatMessage]
+
+
+class AdvisorChatResponse(BaseModel):
+    reply: str

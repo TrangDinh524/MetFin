@@ -3,3 +3,5 @@ uvicorn
 pydantic
 google-auth
 requests
+openai
+python-dotenv
