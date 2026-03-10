@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Wellness Score Engine — computes the composite 0-100 Wealth Wellness Score.
 
 Based on the functional requirements:

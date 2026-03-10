@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Insights Engine — generates actionable risk insights from live data."""
 import json
 from pathlib import Path

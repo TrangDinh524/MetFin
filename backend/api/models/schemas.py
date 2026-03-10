@@ -1,6 +1,7 @@
 """Pydantic response models for all API endpoints."""
+from __future__ import annotations
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, List
 
 
 # ── Investment models ──────────────────────────────────────────────
@@ -26,14 +27,14 @@ class InvestmentSummary(BaseModel):
     allTimeGainPct: float
     liquidity: str
     volatility: str
-    allocation: dict[str, float]
-    geographic: dict[str, float]
-    sectors: dict[str, float]
+    allocation: Dict[str, float]
+    geographic: Dict[str, float]
+    sectors: Dict[str, float]
 
 
 class InvestmentResponse(BaseModel):
     summary: InvestmentSummary
-    holdings: list[Holding]
+    holdings: List[Holding]
 
 
 # ── Banking models ─────────────────────────────────────────────────
@@ -51,7 +52,7 @@ class BankAccount(BaseModel):
 
 class BankingSummary(BaseModel):
     totalBalance: float
-    accountTypeMix: dict[str, float]
+    accountTypeMix: Dict[str, float]
     fdicCovered: float
     fdicExposed: float
     fdicCoveredPct: float
@@ -61,7 +62,7 @@ class BankingSummary(BaseModel):
 
 class BankingResponse(BaseModel):
     summary: BankingSummary
-    accounts: list[BankAccount]
+    accounts: List[BankAccount]
 
 
 # ── Crypto models ──────────────────────────────────────────────────
@@ -83,7 +84,7 @@ class CryptoHolding(BaseModel):
 
 class CryptoSummary(BaseModel):
     totalValue: float
-    assetMix: dict[str, float]
+    assetMix: Dict[str, float]
     walletsTracked: int
     liquidity: str
     volatility: str
@@ -91,7 +92,7 @@ class CryptoSummary(BaseModel):
 
 class CryptoResponse(BaseModel):
     summary: CryptoSummary
-    holdings: list[CryptoHolding]
+    holdings: List[CryptoHolding]
 
 
 # ── Dashboard models ───────────────────────────────────────────────
@@ -126,9 +127,9 @@ class DashboardStats(BaseModel):
 
 class DashboardResponse(BaseModel):
     stats: DashboardStats
-    netWorthHistory: list[NetWorthPoint]
-    assetAllocation: list[AssetAllocItem]
-    debtItems: list[DebtItem]
+    netWorthHistory: List[NetWorthPoint]
+    assetAllocation: List[AssetAllocItem]
+    debtItems: List[DebtItem]
 
 
 # ── Wellness models ────────────────────────────────────────────────
@@ -143,7 +144,7 @@ class SubScore(BaseModel):
 class WellnessResponse(BaseModel):
     score: int
     label: str
-    subScores: list[SubScore]
+    subScores: List[SubScore]
 
 
 # ── Insight models ─────────────────────────────────────────────────
@@ -158,8 +159,8 @@ class Insight(BaseModel):
 
 
 class InsightsResponse(BaseModel):
-    insights: list[Insight]
-    counts: dict[str, int]
+    insights: List[Insight]
+    counts: Dict[str, int]
 
 
 # ── Scenario models ────────────────────────────────────────────────
@@ -190,12 +191,12 @@ class ScenarioResult(BaseModel):
     projectedNetWorth: float
     impact: float
     impactPct: float
-    stats: list[ScenarioStat]
-    actions: list[ActionItem]
+    stats: List[ScenarioStat]
+    actions: List[ActionItem]
 
 
 class ScenarioListResponse(BaseModel):
-    scenarios: list[ScenarioOption]
+    scenarios: List[ScenarioOption]
 
 
 class ScenarioRunResponse(BaseModel):

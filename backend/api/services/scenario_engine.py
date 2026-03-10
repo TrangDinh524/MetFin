@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Scenario Simulation Engine — runs what-if scenarios against live portfolio data."""
 import json
 from pathlib import Path
