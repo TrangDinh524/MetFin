@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { SectionId } from '../types'
 import {
   api,
+  type GoogleUser,
   type DashboardData,
   type InvestmentData,
   type BankingData,
@@ -13,6 +14,12 @@ import {
 } from '../lib/api'
 
 interface FinanceState {
+  // Auth
+  user: GoogleUser | null
+  authLoading: boolean
+  loginWithGoogle: (credential: string) => Promise<void>
+  logout: () => void
+
   section: SectionId
   expanded: { assets: boolean; debt: boolean; settings: boolean }
   setSection: (id: SectionId) => void
@@ -44,6 +51,26 @@ interface FinanceState {
 }
 
 export const useFinanceStore = create<FinanceState>((set) => ({
+  // Auth
+  user: (() => {
+    try { return JSON.parse(localStorage.getItem('metfin_user') ?? 'null') } catch { return null }
+  })(),
+  authLoading: false,
+  loginWithGoogle: async (credential: string) => {
+    set({ authLoading: true })
+    try {
+      const user = await api.loginWithGoogle(credential)
+      localStorage.setItem('metfin_user', JSON.stringify(user))
+      set({ user })
+    } finally {
+      set({ authLoading: false })
+    }
+  },
+  logout: () => {
+    localStorage.removeItem('metfin_user')
+    set({ user: null })
+  },
+
   section: 'dashboard',
   expanded: { assets: false, debt: false, settings: false },
   setSection: (id) => set({ section: id }),

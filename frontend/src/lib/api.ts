@@ -12,8 +12,11 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function post<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: 'POST' })
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  })
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
   return res.json() as Promise<T>
 }
@@ -215,7 +218,16 @@ export interface ScenarioListData {
 
 // ── API calls ─────────────────────────────────────────────────────
 
+export interface GoogleUser {
+  email: string
+  name: string
+  picture: string
+  sub: string
+}
+
 export const api = {
+  loginWithGoogle: (credential: string) =>
+    post<GoogleUser>('/auth/google', { credential }),
   getDashboard: () => get<DashboardData>('/dashboard'),
   getInvestments: () => get<InvestmentData>('/investments'),
   getBanking: () => get<BankingData>('/banking'),

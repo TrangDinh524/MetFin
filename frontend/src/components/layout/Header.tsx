@@ -1,4 +1,4 @@
-import { Bell, Plus } from 'lucide-react'
+import { Bell, LogOut, Plus } from 'lucide-react'
 import { useFinanceStore } from '../../store/useFinanceStore'
 import { MobileMenuButton } from './MobileMenuButton'
 
@@ -17,6 +17,8 @@ interface HeaderProps {
 
 export function Header({ onOpenMenu }: HeaderProps) {
   const section = useFinanceStore((s) => s.section)
+  const user = useFinanceStore((s) => s.user)
+  const logout = useFinanceStore((s) => s.logout)
   const base = section.split('-')[0] ?? 'dashboard'
   const subPage = section.includes('-') ? section.split('-')[1] : null
   const title = titles[base] ?? 'Dashboard'
@@ -54,6 +56,29 @@ export function Header({ onOpenMenu }: HeaderProps) {
           <Plus size={13} />
           Add Asset
         </button>
+        {user && (
+          <div className="flex items-center gap-2 border-l border-[#cae7ee] pl-3.5">
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt={user.name}
+                className="h-7 w-7 rounded-full border border-[#cae7ee]"
+              />
+            )}
+            <span className="text-[12px] font-medium text-[#3a5260] max-w-[120px] truncate hidden sm:block">
+              {user.name}
+            </span>
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-lg border border-[#cae7ee] bg-[#f0f8fa] p-1.5"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut size={14} className="text-[#3a5260]" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )
