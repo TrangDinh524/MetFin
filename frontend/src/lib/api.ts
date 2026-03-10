@@ -234,12 +234,30 @@ export interface HoldingCreateInput {
   sector: string
 }
 
+export interface DebtCreateInput {
+  name: string
+  type: string
+  balance: number
+  monthly: number
+  rate: number
+}
+
+export interface ApiDebtItemWithId extends ApiDebtItem {
+  id: string
+}
+
+export interface DebtListData {
+  items: ApiDebtItemWithId[]
+}
+
 export const api = {
   loginWithGoogle: (credential: string) =>
     post<GoogleUser>('/auth/google', { credential }),
   getDashboard: () => get<DashboardData>('/dashboard'),
   getInvestments: () => get<InvestmentData>('/investments'),
   addHolding: (body: HoldingCreateInput) => post<InvestmentData>('/investments', body),
+  getDebt: () => get<DebtListData>('/debt'),
+  addDebt: (body: DebtCreateInput) => post<DebtListData>('/debt', body),
   getBanking: () => get<BankingData>('/banking'),
   getCrypto: () => get<CryptoData>('/crypto'),
   getWellness: () => get<WellnessData>('/wellness'),

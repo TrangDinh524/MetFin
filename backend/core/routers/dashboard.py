@@ -24,27 +24,23 @@ def _load_all():
         bank = json.load(f)
     with open(DATA_DIR / "crypto.json") as f:
         crypto = json.load(f)
-    return inv, bank, crypto
+    with open(DATA_DIR / "debt.json") as f:
+        debt = json.load(f)
+    return inv, bank, crypto, debt
 
 
 @router.get("", response_model=DashboardResponse)
 def get_dashboard():
     """Return aggregated dashboard data: stats, net worth history, asset allocation, debt."""
-    inv, bank, crypto = _load_all()
+    inv, bank, crypto, debt = _load_all()
 
     inv_total = inv["summary"]["totalValue"]
     bank_total = bank["summary"]["totalBalance"]
     crypto_total = crypto["summary"]["totalValue"]
     total_assets = inv_total + bank_total + crypto_total
 
-    # Debt items (hardcoded since debt is not one of the 3 data sources)
-    debt_items = [
-        {"name": "Primary Mortgage", "type": "Mortgage", "balance": 320000, "monthly": 2100, "rate": 3.8},
-        {"name": "Tesla Model 3", "type": "Auto", "balance": 18500, "monthly": 420, "rate": 5.2},
-        {"name": "Chase Sapphire", "type": "Card", "balance": 2800, "monthly": 140, "rate": 19.9},
-        {"name": "Amex Gold", "type": "Card", "balance": 1400, "monthly": 70, "rate": 22.4},
-        {"name": "Federal Loans", "type": "Student", "balance": 22000, "monthly": 280, "rate": 4.5},
-    ]
+    # Debt items loaded from debt.json
+    debt_items = debt["items"]
     total_debt = sum(d["balance"] for d in debt_items)
     net_worth = total_assets - total_debt
 

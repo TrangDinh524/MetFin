@@ -118,11 +118,24 @@ class AssetAllocItem(BaseModel):
 
 
 class DebtItem(BaseModel):
+    id: str
     name: str
     type: str
     balance: float
     monthly: float
     rate: float
+
+
+class DebtCreate(BaseModel):
+    name: str
+    type: str
+    balance: float
+    monthly: float
+    rate: float
+
+
+class DebtResponse(BaseModel):
+    items: List[DebtItem]
 
 
 class DashboardStats(BaseModel):

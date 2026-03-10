@@ -1,0 +1,9 @@
+{
+  "items": [
+    {"id": "d1", "name": "Primary Mortgage", "type": "Mortgage", "balance": 320000, "monthly": 2100, "rate": 3.8},
+    {"id": "d2", "name": "Tesla Model 3", "type": "Auto", "balance": 18500, "monthly": 420, "rate": 5.2},
+    {"id": "d3", "name": "Chase Sapphire", "type": "Credit Card", "balance": 2800, "monthly": 140, "rate": 19.9},
+    {"id": "d4", "name": "Amex Gold", "type": "Credit Card", "balance": 1400, "monthly": 70, "rate": 22.4},
+    {"id": "d5", "name": "Federal Loans", "type": "Student Loan", "balance": 22000, "monthly": 280, "rate": 4.5}
+  ]
+}
