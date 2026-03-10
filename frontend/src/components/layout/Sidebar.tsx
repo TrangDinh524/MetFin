@@ -7,7 +7,6 @@ import {
   BarChart2,
   Zap,
   Settings,
-  LogOut,
   ArrowUpRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -31,27 +30,13 @@ const nav: NavItem[] = [
     id: 'assets',
     Icon: TrendingUp,
     label: 'Asset Details',
-    ek: 'assets',
-    children: [
-      { id: 'assets-public', l: 'Public Investments' },
-      { id: 'assets-private', l: 'Private Assets' },
-      { id: 'assets-employer', l: 'Employer Equity' },
-      { id: 'assets-digital', l: 'Digital Assets' },
-      { id: 'assets-bank', l: 'Bank Deposits' },
-    ],
+    ek: 'assets'
   },
   {
     id: 'debt',
     Icon: CreditCard,
     label: 'Debt Details',
-    ek: 'debt',
-    children: [
-      { id: 'debt-mortgage', l: 'Mortgages' },
-      { id: 'debt-personal', l: 'Personal & Auto' },
-      { id: 'debt-cards', l: 'Credit Cards' },
-      { id: 'debt-student', l: 'Student Loans' },
-      { id: 'debt-other', l: 'Other Liabilities' },
-    ],
+    ek: 'debt'
   },
   { id: 'scenarios', Icon: BarChart2, label: 'Scenario Lab' },
   { id: 'insights', Icon: Zap, label: 'Insights & Actions', badge: 2 },
@@ -59,12 +44,7 @@ const nav: NavItem[] = [
     id: 'settings',
     Icon: Settings,
     label: 'Settings & Profile',
-    ek: 'settings',
-    children: [
-      { id: 'settings-account', l: 'Account' },
-      { id: 'settings-help', l: 'Help Centre' },
-      { id: 'settings-prefs', l: 'Settings' },
-    ],
+    ek: 'settings'
   },
 ]
 
@@ -224,24 +204,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             )
           })}
         </nav>
-
-        <div className="flex items-center gap-2.5 border-t border-[#cae7ee] p-3">
-          <div
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple})`,
-            }}
-          >
-            AJ
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[12px] font-semibold text-[#0d1117]">
-              Alex Johnson
-            </div>
-            <div className="text-[10px] text-[#7a9fad]">Premium Plan</div>
-          </div>
-          <LogOut size={13} className="cursor-pointer text-[#7a9fad]" />
-        </div>
       </aside>
     </>
   )
