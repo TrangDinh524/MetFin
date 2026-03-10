@@ -4,6 +4,7 @@ import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wal
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
+import { InfoTooltip } from '../../components/ui/InfoTooltip'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import type { SectorItem } from '../../types'
 import type { HoldingCreateInput, BankAccount } from '../../lib/api'
@@ -191,6 +192,7 @@ export function AssetsSection() {
               note="YTD"
               color={COLORS.primary}
               Icon={TrendingUp}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">Portfolio Value</p><p>Current market value of all your public investment holdings.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Value = Σ(shares × current price)</p></>}
             />
             <StatCard
               label="Today's Gain"
@@ -199,6 +201,7 @@ export function AssetsSection() {
               note="today"
               color={COLORS.mint}
               Icon={ArrowUpRight}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">Today's Gain</p><p>Change in portfolio value from yesterday's close to today's current price.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Today's Gain = Σ(shares × (today − yesterday))</p></>}
             />
             <StatCard
               label="All-Time Gain"
@@ -207,13 +210,15 @@ export function AssetsSection() {
               note="total"
               color={COLORS.purple}
               Icon={Activity}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">All-Time Gain</p><p>Total unrealised profit or loss since your average cost basis.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">All-Time Gain = Current Value − Total Cost Basis</p><p className="mt-1 font-mono text-[10px]">Gain % = Gain / Cost Basis × 100</p></>}
             />
           </div>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_252px]">
             <Card>
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-semibold text-[#0d1117]">
-                  Holdings
+                <div className="flex items-center gap-1.5">
+                  <div className="text-sm font-semibold text-[#0d1117]">Holdings</div>
+                  <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Holdings</p><p>Individual securities (stocks, ETFs, bonds) in your brokerage account.</p><p className="mt-1.5 text-[#7a9fad]">Gain/Loss = (Current Value − Cost Basis) / Cost Basis × 100</p></>} />
                 </div>
                 <div className="flex items-center gap-2">
                   {holdings.length > 0 && (
@@ -347,8 +352,9 @@ export function AssetsSection() {
               </div>
             </Card>
             <Card className="flex flex-col gap-3">
-              <div className="text-sm font-semibold text-[#0d1117]">
-                Sector Breakdown
+              <div className="flex items-center gap-1.5">
+                <div className="text-sm font-semibold text-[#0d1117]">Sector Breakdown</div>
+                <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Sector Breakdown</p><p>Proportion of your investment portfolio allocated to each industry sector.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Sector % = Sector Value / Total Portfolio</p><p className="mt-1.5 text-[#7a9fad]">High concentration in a single sector increases risk.</p></>} />
               </div>
               <PieChart width={196} height={148}>
                 <Pie
@@ -398,6 +404,7 @@ export function AssetsSection() {
               note="all-time"
               color={COLORS.amber}
               Icon={Coins}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">Crypto Portfolio Value</p><p>Total USD value of all your digital asset holdings across all tracked wallets.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Value = Σ(quantity × current price)</p></>}
             />
             <StatCard
               label="All-Time Gain"
@@ -406,6 +413,7 @@ export function AssetsSection() {
               note="total"
               color={COLORS.mint}
               Icon={TrendingUp}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">All-Time Gain (Crypto)</p><p>Total unrealised profit or loss across all crypto positions since cost basis.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Gain = Current Value − Total Cost Basis</p></>}
             />
             <StatCard
               label="Wallets Tracked"
@@ -414,6 +422,7 @@ export function AssetsSection() {
               note={`${crypto?.summary.liquidity ?? '—'} liquidity`}
               color={COLORS.purple}
               Icon={Wallet}
+              info={<><p className="mb-1 font-semibold text-[#0d1117]">Wallets Tracked</p><p>Number of distinct wallet addresses or exchange accounts connected to MetFin.</p><p className="mt-1.5 text-[#7a9fad]">Crypto liquidity is classified as High (tradeable 24/7) with gas fees noted.</p></>}
             />
           </div>
 
@@ -517,7 +526,10 @@ export function AssetsSection() {
             {/* Right panel: Asset Mix + connect-prompt */}
             <div className="flex flex-col gap-3">
               <Card className="flex flex-col gap-3">
-                <div className="text-sm font-semibold text-[#0d1117]">Asset Mix</div>
+                <div className="flex items-center gap-1.5">
+                  <div className="text-sm font-semibold text-[#0d1117]">Asset Mix</div>
+                  <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Asset Mix</p><p>Breakdown of your crypto portfolio by coin/token type as a percentage of total digital asset value.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Token % = Token Value / Total Crypto Value</p></>} />
+                </div>
                 <PieChart width={196} height={148}>
                   <Pie
                     data={assetMix}
@@ -614,6 +626,7 @@ export function AssetsSection() {
                     note="across all accounts"
                     color={COLORS.primary}
                     Icon={Landmark}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">Total Deposits</p><p>Combined balance across all your tracked bank accounts (checking, savings, CDs, money market).</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Total = Σ(account balances)</p></>}
                   />
                   <StatCard
                     label="FDIC Coverage"
@@ -622,6 +635,7 @@ export function AssetsSection() {
                     note={`${fdicCoveredPct}% insured`}
                     color={COLORS.mint}
                     Icon={ShieldCheck}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">FDIC Coverage</p><p>Amount of your deposits protected by FDIC insurance. The FDIC insures up to $250,000 per depositor, per institution.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Covered = min(balance, $250K) per institution</p><p className="mt-1.5 text-[#7a9fad]">Balances above $250K at any single bank are uninsured.</p></>}
                   />
                   <StatCard
                     label="Best APY"
@@ -630,6 +644,7 @@ export function AssetsSection() {
                     note="highest rate"
                     color={COLORS.purple}
                     Icon={Percent}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">Best APY</p><p>Annual Percentage Yield — the highest interest rate earned across any of your savings or CD accounts.</p><p className="mt-1.5 text-[#7a9fad]">APY accounts for compound interest; APR does not.</p></>}
                   />
                 </div>
 
@@ -637,7 +652,10 @@ export function AssetsSection() {
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_252px]">
                   <Card>
                     <div className="mb-4 flex items-center justify-between">
-                      <div className="text-sm font-semibold text-[#0d1117]">Accounts</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-sm font-semibold text-[#0d1117]">Accounts</div>
+                        <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Bank Accounts</p><p>All your connected bank accounts — checking, savings, CDs, and money market accounts.</p><p className="mt-1.5 text-[#7a9fad]">Checking = Immediate liquidity · CDs = Locked until maturity</p></>} />
+                      </div>
                       <div className="flex items-center gap-2">
                         {accounts.length > 0 && (
                           <button
@@ -796,7 +814,10 @@ export function AssetsSection() {
                   {/* Right panel */}
                   <div className="flex flex-col gap-3">
                     <Card className="flex flex-col gap-3">
-                      <div className="text-sm font-semibold text-[#0d1117]">Account Mix</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-sm font-semibold text-[#0d1117]">Account Mix</div>
+                        <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Account Mix</p><p>Breakdown of your total deposits by account type (Checking, Savings, CD, Money Market).</p><p className="mt-1.5 text-[#7a9fad]">Diversifying across account types can optimize between liquidity and yield.</p></>} />
+                      </div>
                       <PieChart width={196} height={148}>
                         <Pie
                           data={accountTypeMix}
@@ -835,7 +856,10 @@ export function AssetsSection() {
                           <ShieldCheck size={14} style={{ color: COLORS.mint }} />
                         </div>
                         <div>
-                          <div className="text-[12px] font-semibold text-[#0d1117]">FDIC Protection</div>
+                          <div className="flex items-center gap-1">
+                            <div className="text-[12px] font-semibold text-[#0d1117]">FDIC Protection</div>
+                            <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">FDIC Protection</p><p>The FDIC insures deposits up to $250,000 per depositor, per bank. Balances above this limit at any single institution are at risk if the bank fails.</p><p className="mt-1.5 text-[#7a9fad]">Tip: spread large deposits across multiple banks to maximise coverage.</p></>} size={10} />
+                          </div>
                           <div className="text-[10px]" style={{ color: COLORS.textMuted }}>
                             Up to $250k per bank
                           </div>
