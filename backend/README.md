@@ -71,6 +71,12 @@ backend/
 # Navigate to backend folder first
 cd backend
 
+# Create a Python 3.12 virtual environment (first time only)
+/usr/local/opt/python@3.12/bin/python3.12 -m venv .venv
+
+# Activate the venv
+source .venv/bin/activate
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -80,6 +86,11 @@ uvicorn main:app --reload --port 8000
 # Open interactive API docs
 open http://localhost:8000/docs
 ```
+
+> **Note:** If you don't want to activate the venv each time, run directly:
+> ```bash
+> .venv/bin/uvicorn main:app --reload --port 8000
+> ```
 
 ## Tech Stack
 
