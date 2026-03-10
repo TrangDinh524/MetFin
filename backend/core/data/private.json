@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "totalValue": 812000,
+    "assetTypeMix": {
+      "Private Equity": 36.9,
+      "Startups": 27.1,
+      "Real Estate": 24.6,
+      "Collectibles": 7.4,
+      "Art": 4.0
+    },
+    "liquidity": "Low to None",
+    "volatility": "Variable"
+  },
+  "assets": [
+    {
+      "id": "pa1",
+      "name": "Andreessen Horowitz Growth Fund IV",
+      "assetType": "Private Equity",
+      "initialInvestment": 150000,
+      "currentValuation": 299500,
+      "exitTimeline": "2028",
+      "lastUpdated": "2026-01-20T00:00:00Z"
+    },
+    {
+      "id": "pa2",
+      "name": "Series B — Fintech Startup (Confidential)",
+      "assetType": "Startups",
+      "initialInvestment": 75000,
+      "currentValuation": 220000,
+      "exitTimeline": "2027",
+      "lastUpdated": "2025-11-10T00:00:00Z"
+    },
+    {
+      "id": "pa3",
+      "name": "Austin TX Rental Property",
+      "assetType": "Real Estate",
+      "initialInvestment": 120000,
+      "currentValuation": 200000,
+      "exitTimeline": "2030",
+      "lastUpdated": "2026-02-01T00:00:00Z"
+    },
+    {
+      "id": "pa4",
+      "name": "1967 Ford Mustang Fastback",
+      "assetType": "Collectibles",
+      "initialInvestment": 42000,
+      "currentValuation": 60000,
+      "exitTimeline": "2027",
+      "lastUpdated": "2025-09-15T00:00:00Z"
+    },
+    {
+      "id": "pa5",
+      "name": "Jean-Michel Basquiat Print #3",
+      "assetType": "Art",
+      "initialInvestment": 28000,
+      "currentValuation": 32500,
+      "exitTimeline": "2029",
+      "lastUpdated": "2025-12-01T00:00:00Z"
+    }
+  ]
+}

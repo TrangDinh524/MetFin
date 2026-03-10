@@ -34,14 +34,17 @@ def _load_all():
         bank = json.load(f)
     with open(DATA_DIR / "crypto.json") as f:
         crypto = json.load(f)
-    return inv, bank, crypto
+    with open(DATA_DIR / "private.json") as f:
+        private = json.load(f)
+    return inv, bank, crypto, private
 
 
-def _baseline(inv: dict, bank: dict, crypto: dict) -> dict[str, float]:
+def _baseline(inv: dict, bank: dict, crypto: dict, private: dict) -> dict[str, float]:
     inv_total = float(inv["summary"]["totalValue"])
     bank_total = float(bank["summary"]["totalBalance"])
     crypto_total = float(crypto["summary"]["totalValue"])
-    net_worth = inv_total + bank_total + crypto_total
+    private_total = float(private["summary"]["totalValue"])
+    net_worth = inv_total + bank_total + crypto_total + private_total
 
     alloc = inv["summary"].get("allocation", {}) or {}
     stocks_val = inv_total * float(alloc.get("Stocks", 0.0)) / 100.0
@@ -56,6 +59,7 @@ def _baseline(inv: dict, bank: dict, crypto: dict) -> dict[str, float]:
         "inv_total": inv_total,
         "bank_total": bank_total,
         "crypto_total": crypto_total,
+        "private_total": private_total,
         "net_worth": net_worth,
         "stocks_val": stocks_val,
         "bonds_val": bonds_val,
@@ -87,8 +91,8 @@ def get_scenarios() -> list[dict]:
 
 def run_scenario(scenario_id: str, inputs: dict[str, Any] | None = None) -> dict | None:
     inputs = inputs or {}
-    inv, bank, crypto = _load_all()
-    base = _baseline(inv, bank, crypto)
+    inv, bank, crypto, private = _load_all()
+    base = _baseline(inv, bank, crypto, private)
     current_nw = base["net_worth"]
 
     scenario_def = next((s for s in SCENARIO_DEFS if s["id"] == scenario_id), None)

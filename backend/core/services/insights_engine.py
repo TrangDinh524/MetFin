@@ -26,17 +26,20 @@ def _load_all():
         bank = json.load(f)
     with open(DATA_DIR / "crypto.json") as f:
         crypto = json.load(f)
-    return inv, bank, crypto
+    with open(DATA_DIR / "private.json") as f:
+        private = json.load(f)
+    return inv, bank, crypto, private
 
 
 def generate_insights() -> list[dict]:
     """Analyze portfolio and return prioritized insight list."""
-    inv, bank, crypto = _load_all()
+    inv, bank, crypto, private = _load_all()
 
     inv_total = inv["summary"]["totalValue"]
     bank_total = bank["summary"]["totalBalance"]
     crypto_total = crypto["summary"]["totalValue"]
-    net_worth = inv_total + bank_total + crypto_total
+    private_total = private["summary"]["totalValue"]
+    net_worth = inv_total + bank_total + crypto_total + private_total
 
     alloc = inv["summary"]["allocation"]
     liquid_cash = sum(
@@ -152,6 +155,39 @@ def generate_insights() -> list[dict]:
             "desc": f"Unrealized crypto gains of ${total_gains:,.0f}. Consider tax-loss harvesting strategies.",
             "action": "Plan Taxes",
             "color": COLORS["mint"],
+        })
+        idx += 1
+
+    # 8. Private assets illiquidity warning
+    private_pct = private_total / net_worth * 100 if net_worth else 0
+    if private_pct > 25:
+        insights.append({
+            "id": idx,
+            "sev": "warning",
+            "icon": "Lock",
+            "title": "High Illiquid Asset Exposure",
+            "desc": f"Private & alternative assets are {private_pct:.0f}% of net worth. These cannot be quickly liquidated in an emergency.",
+            "action": "Review Liquidity",
+            "color": COLORS["amber"],
+        })
+        idx += 1
+
+    # 9. Stale private asset valuations (>90 days old)
+    from datetime import datetime, timezone, timedelta
+    stale_threshold = datetime.now(timezone.utc) - timedelta(days=90)
+    stale_assets = [
+        a["name"] for a in private.get("assets", [])
+        if datetime.fromisoformat(a["lastUpdated"].replace("Z", "+00:00")) < stale_threshold
+    ]
+    if stale_assets:
+        insights.append({
+            "id": idx,
+            "sev": "warning",
+            "icon": "Clock",
+            "title": "Stale Private Asset Valuations",
+            "desc": f"{len(stale_assets)} private asset(s) haven't been updated in 90+ days: {', '.join(stale_assets[:2])}{'...' if len(stale_assets) > 2 else ''}.",
+            "action": "Update Values",
+            "color": COLORS["purple"],
         })
         idx += 1
 

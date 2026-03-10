@@ -1,0 +1,10 @@
+{
+  "name": "Alex Johnson",
+  "email": "alex.johnson@email.com",
+  "phone": "",
+  "bio": "",
+  "monthlyExpenses": 6200.0,
+  "primaryGoal": "Pay Off Debt",
+  "currency": "USD",
+  "timezone": "America/New_York"
+}

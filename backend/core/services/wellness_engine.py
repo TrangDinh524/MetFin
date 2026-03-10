@@ -24,29 +24,32 @@ MONTHLY_EXPENSES = 6500
 
 
 def _load_all():
-    """Load all three data sources."""
+    """Load all data sources."""
     with open(DATA_DIR / "investments.json") as f:
         inv = json.load(f)
     with open(DATA_DIR / "banking.json") as f:
         bank = json.load(f)
     with open(DATA_DIR / "crypto.json") as f:
         crypto = json.load(f)
-    return inv, bank, crypto
+    with open(DATA_DIR / "private.json") as f:
+        private = json.load(f)
+    return inv, bank, crypto, private
 
 
-def _totals(inv: dict, bank: dict, crypto: dict):
+def _totals(inv: dict, bank: dict, crypto: dict, private: dict):
     """Compute per-category totals."""
     inv_total = inv["summary"]["totalValue"]
     bank_total = bank["summary"]["totalBalance"]
     crypto_total = crypto["summary"]["totalValue"]
-    net_worth = inv_total + bank_total + crypto_total
-    return inv_total, bank_total, crypto_total, net_worth
+    private_total = private["summary"]["totalValue"]
+    net_worth = inv_total + bank_total + crypto_total + private_total
+    return inv_total, bank_total, crypto_total, private_total, net_worth
 
 
 # ── Sub-score 1: Liquidity (25%) ──────────────────────────────────
-def calc_liquidity(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
-    """Tier 1 = bank deposits + brokerage (stocks/ETFs/cash). Score = Tier1 / NetWorth * 100."""
-    _, bank_total, _, net_worth = _totals(inv, bank, crypto)
+def calc_liquidity(inv: dict, bank: dict, crypto: dict, private: dict) -> tuple[int, str]:
+    """Tier 1 = bank deposits + brokerage (stocks/ETFs/cash). Private assets are illiquid (Tier 4-5)."""
+    _, bank_total, _, _, net_worth = _totals(inv, bank, crypto, private)
     if net_worth == 0:
         return 0, "No assets found."
 
@@ -70,9 +73,9 @@ def calc_liquidity(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
 
 
 # ── Sub-score 2: Diversification (25%) ────────────────────────────
-def calc_diversification(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
+def calc_diversification(inv: dict, bank: dict, crypto: dict, private: dict) -> tuple[int, str]:
     """HHI-based: Score = 100 - (HHI / 100)."""
-    inv_total, bank_total, crypto_total, net_worth = _totals(inv, bank, crypto)
+    inv_total, bank_total, crypto_total, private_total, net_worth = _totals(inv, bank, crypto, private)
     if net_worth == 0:
         return 0, "No assets to diversify."
 
@@ -84,8 +87,9 @@ def calc_diversification(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]
     cash_inv_pct = (inv_total * alloc.get("Cash", 0) / 100) / net_worth * 100
     bank_pct = bank_total / net_worth * 100
     crypto_pct = crypto_total / net_worth * 100
+    private_pct = private_total / net_worth * 100
 
-    categories = [stocks_pct, bonds_pct, etf_pct, cash_inv_pct, bank_pct, crypto_pct]
+    categories = [stocks_pct, bonds_pct, etf_pct, cash_inv_pct, bank_pct, crypto_pct, private_pct]
     hhi = sum(c ** 2 for c in categories)
     score = max(0, min(100, round(100 - hhi / 100)))
 
@@ -102,19 +106,22 @@ def calc_diversification(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]
 
 
 # ── Sub-score 3: Growth Potential (20%) ───────────────────────────
-def calc_growth(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
+def calc_growth(inv: dict, bank: dict, crypto: dict, private: dict) -> tuple[int, str]:
     """Weighted: High Growth=100, Medium=60, Low=20."""
-    inv_total, bank_total, crypto_total, net_worth = _totals(inv, bank, crypto)
+    inv_total, bank_total, crypto_total, private_total, net_worth = _totals(inv, bank, crypto, private)
     if net_worth == 0:
         return 0, "No assets."
 
     alloc = inv["summary"]["allocation"]
-    # High growth: stocks + crypto
-    high_growth_val = (inv_total * alloc.get("Stocks", 0) / 100) + crypto_total
-    # Medium growth: bonds + ETFs
-    medium_val = inv_total * (alloc.get("Bonds", 0) + alloc.get("ETFs", 0)) / 100
-    # Low growth: cash + bank deposits
-    low_val = (inv_total * alloc.get("Cash", 0) / 100) + bank_total
+    # High growth: stocks + crypto + PE/Startups share of private
+    priv_assets = private.get("assets", [])
+    priv_high = sum(a["currentValuation"] for a in priv_assets if a["assetType"] in ("Private Equity", "Startups"))
+    priv_medium = sum(a["currentValuation"] for a in priv_assets if a["assetType"] == "Real Estate")
+    priv_low = sum(a["currentValuation"] for a in priv_assets if a["assetType"] in ("Collectibles", "Art"))
+
+    high_growth_val = (inv_total * alloc.get("Stocks", 0) / 100) + crypto_total + priv_high
+    medium_val = inv_total * (alloc.get("Bonds", 0) + alloc.get("ETFs", 0)) / 100 + priv_medium
+    low_val = (inv_total * alloc.get("Cash", 0) / 100) + bank_total + priv_low
 
     score = round(
         (high_growth_val / net_worth) * 100
@@ -136,9 +143,9 @@ def calc_growth(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
 
 
 # ── Sub-score 4: Risk Resilience (20%) ────────────────────────────
-def calc_risk_resilience(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
+def calc_risk_resilience(inv: dict, bank: dict, crypto: dict, private: dict) -> tuple[int, str]:
     """Emergency fund ratio × protection factor."""
-    inv_total, bank_total, crypto_total, net_worth = _totals(inv, bank, crypto)
+    inv_total, bank_total, crypto_total, _, net_worth = _totals(inv, bank, crypto, private)
     if net_worth == 0:
         return 0, "No assets."
 
@@ -167,9 +174,9 @@ def calc_risk_resilience(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]
 
 
 # ── Sub-score 5: Concentration Risk (10%) ─────────────────────────
-def calc_concentration(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
+def calc_concentration(inv: dict, bank: dict, crypto: dict, private: dict) -> tuple[int, str]:
     """Start at 100, deduct penalties for over-concentration."""
-    inv_total, _, crypto_total, net_worth = _totals(inv, bank, crypto)
+    inv_total, _, crypto_total, private_total, net_worth = _totals(inv, bank, crypto, private)
     if net_worth == 0:
         return 0, "No assets."
 
@@ -196,6 +203,15 @@ def calc_concentration(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
         score -= 8
         penalties.append(f"Crypto is {crypto_pct:.0f}% of net worth (>15%)")
 
+    # Private assets illiquidity concentration
+    private_pct = private_total / net_worth * 100
+    if private_pct > 35:
+        score -= 15
+        penalties.append(f"Private assets are {private_pct:.0f}% of net worth — high illiquidity concentration")
+    elif private_pct > 25:
+        score -= 8
+        penalties.append(f"Private assets are {private_pct:.0f}% of net worth — moderate illiquidity")
+
     # Single holding >15% of total investments
     for h in inv.get("holdings", []):
         h_pct = h["value"] / net_worth * 100
@@ -211,13 +227,13 @@ def calc_concentration(inv: dict, bank: dict, crypto: dict) -> tuple[int, str]:
 # ── Main compute function ─────────────────────────────────────────
 def compute_wellness():
     """Compute all sub-scores and the composite wellness score."""
-    inv, bank, crypto = _load_all()
+    inv, bank, crypto, private = _load_all()
 
-    liq_score, liq_desc = calc_liquidity(inv, bank, crypto)
-    div_score, div_desc = calc_diversification(inv, bank, crypto)
-    grw_score, grw_desc = calc_growth(inv, bank, crypto)
-    rsk_score, rsk_desc = calc_risk_resilience(inv, bank, crypto)
-    con_score, con_desc = calc_concentration(inv, bank, crypto)
+    liq_score, liq_desc = calc_liquidity(inv, bank, crypto, private)
+    div_score, div_desc = calc_diversification(inv, bank, crypto, private)
+    grw_score, grw_desc = calc_growth(inv, bank, crypto, private)
+    rsk_score, rsk_desc = calc_risk_resilience(inv, bank, crypto, private)
+    con_score, con_desc = calc_concentration(inv, bank, crypto, private)
 
     sub_scores = [
         {"name": "Liquidity", "score": liq_score, "weight": 25, "description": liq_desc, "color": COLORS["amber"]},

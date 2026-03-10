@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wallet, Key, Link2, Landmark, ShieldCheck, Percent, Upload, FileText } from 'lucide-react'
+import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wallet, Key, Link2, Landmark, ShieldCheck, Percent, Upload, FileText, Briefcase } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
 import { InfoTooltip } from '../../components/ui/InfoTooltip'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import type { SectorItem } from '../../types'
-import type { HoldingCreateInput, BankAccount } from '../../lib/api'
+import type { HoldingCreateInput, BankAccount, PrivateAssetCreateInput } from '../../lib/api'
+import { PRIVATE_ASSET_TYPES } from '../../lib/api'
 import { useFinanceStore } from '../../store/useFinanceStore'
 
 export function AssetsSection() {
@@ -18,12 +19,17 @@ export function AssetsSection() {
   const investments = useFinanceStore((s) => s.investments)
   const banking = useFinanceStore((s) => s.banking)
   const crypto = useFinanceStore((s) => s.crypto)
+  const privateAssets = useFinanceStore((s) => s.privateAssets)
   const fetchInvestments = useFinanceStore((s) => s.fetchInvestments)
   const fetchBanking = useFinanceStore((s) => s.fetchBanking)
   const fetchCrypto = useFinanceStore((s) => s.fetchCrypto)
+  const fetchPrivateAssets = useFinanceStore((s) => s.fetchPrivateAssets)
   const addHolding = useFinanceStore((s) => s.addHolding)
   const updateHolding = useFinanceStore((s) => s.updateHolding)
   const deleteHolding = useFinanceStore((s) => s.deleteHolding)
+  const addPrivateAsset = useFinanceStore((s) => s.addPrivateAsset)
+  const updatePrivateAsset = useFinanceStore((s) => s.updatePrivateAsset)
+  const deletePrivateAsset = useFinanceStore((s) => s.deletePrivateAsset)
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -59,6 +65,23 @@ export function AssetsSection() {
     localStorage.getItem('metfin_coinbase_nickname') ?? 'My Coinbase'
   )
   const [coinbaseForm, setCoinbaseForm] = useState({ nickname: 'My Coinbase', apiKey: '', apiSecret: '' })
+
+  // Private assets modal state
+  const emptyPrivateForm = (): PrivateAssetCreateInput => ({
+    name: '',
+    assetType: 'Private Equity',
+    initialInvestment: 0,
+    currentValuation: 0,
+    exitTimeline: '',
+  })
+  const [showAddPrivateModal, setShowAddPrivateModal] = useState(false)
+  const [privateForm, setPrivateForm] = useState<PrivateAssetCreateInput>(emptyPrivateForm())
+  const [editingPrivateId, setEditingPrivateId] = useState<string | null>(null)
+  const [privateEditMode, setPrivateEditMode] = useState(false)
+  const [privateConfirmDeleteId, setPrivateConfirmDeleteId] = useState<string | null>(null)
+  const [privateSubmitting, setPrivateSubmitting] = useState(false)
+  const [privateDeleting, setPrivateDeleting] = useState(false)
+  const [privateAddError, setPrivateAddError] = useState<string | null>(null)
 
   function openEditModal(h: typeof holdings[number]) {
     setEditingHolding({ id: h.id, name: h.name, ticker: h.ticker, shares: h.shares, currentPrice: h.currentPrice, costBasis: h.costBasis, sector: h.sector })
@@ -100,15 +123,18 @@ export function AssetsSection() {
     fetchInvestments()
     fetchBanking()
     fetchCrypto()
-  }, [fetchInvestments, fetchBanking, fetchCrypto])
+    fetchPrivateAssets()
+  }, [fetchInvestments, fetchBanking, fetchCrypto, fetchPrivateAssets])
 
   // Build tabs from live data (fallback to 0)
   const invTotal = investments?.summary.totalValue ?? 0
   const bankTotal = banking?.summary.totalBalance ?? 0
   const cryptoTotal = crypto?.summary.totalValue ?? 0
+  const privateTotal = privateAssets?.summary.totalValue ?? 0
 
   const assetTabs = [
     { id: 'public', label: 'Public Investments', total: fmtK(invTotal) },
+    { id: 'private', label: 'Private & Alt', total: fmtK(privateTotal) },
     { id: 'digital', label: 'Digital Assets', total: fmtK(cryptoTotal) },
     { id: 'bank', label: 'Bank Deposits', total: fmtK(bankTotal) },
   ]
@@ -392,6 +418,243 @@ export function AssetsSection() {
               </div>
             </Card>
           </div>
+        </>
+      ) : active === 'private' ? (
+        <>
+          {/* ── Private & Alt stat cards ── */}
+          {(() => {
+            const assets = privateAssets?.assets ?? []
+            const total = privateAssets?.summary.totalValue ?? 0
+            const totalGain = assets.reduce((s, a) => s + (a.currentValuation - a.initialInvestment), 0)
+            const totalCost = assets.reduce((s, a) => s + a.initialInvestment, 0)
+            const gainPct = totalCost > 0 ? parseFloat(((totalGain / totalCost) * 100).toFixed(1)) : 0
+
+            const privateTypeColors: Record<string, string> = {
+              'Private Equity': COLORS.purple,
+              'Startups': COLORS.primary,
+              'Real Estate': COLORS.mint,
+              'Collectibles': COLORS.amber,
+              'Art': COLORS.rose,
+            }
+
+            const typeMix: SectorItem[] = privateAssets
+              ? Object.entries(privateAssets.summary.assetTypeMix).map(([n, v]) => ({
+                  n, v, c: privateTypeColors[n] ?? COLORS.amber,
+                }))
+              : []
+
+            return (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <StatCard
+                    label="Total Est. Value"
+                    value={fmtK(total)}
+                    change={gainPct}
+                    note="unrealised"
+                    color={COLORS.purple}
+                    Icon={Briefcase}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">Total Estimated Value</p><p>Combined current valuation of all private and alternative assets (self-reported or latest round).</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Total = Σ(currentValuation)</p></>}
+                  />
+                  <StatCard
+                    label="Unrealised Gain"
+                    value={`${totalGain >= 0 ? '+' : ''}${fmt(totalGain)}`}
+                    change={gainPct}
+                    note="vs. cost"
+                    color={totalGain >= 0 ? COLORS.mint : COLORS.rose}
+                    Icon={TrendingUp}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">Unrealised Gain</p><p>Difference between current valuations and total initial investments across all private assets.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Gain = Σ(currentValuation − initialInvestment)</p></>}
+                  />
+                  <StatCard
+                    label="Liquidity"
+                    value={privateAssets?.summary.liquidity ?? 'Low to None'}
+                    change={0}
+                    note={`${assets.length} asset${assets.length !== 1 ? 's' : ''} · ${privateAssets?.summary.volatility ?? 'Variable'} volatility`}
+                    color={COLORS.amber}
+                    Icon={Activity}
+                    info={<><p className="mb-1 font-semibold text-[#0d1117]">Liquidity</p><p>Private assets are illiquid — exit timelines typically range from months to years.</p><p className="mt-1.5 text-[#7a9fad]">Classify these as Tier 4–5 in your emergency fund planning.</p></>}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_252px]">
+                  <Card>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-sm font-semibold text-[#0d1117]">Private Holdings</div>
+                        <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Private Holdings</p><p>Illiquid assets including private equity funds, startup stakes, real estate, collectibles, and art.</p><p className="mt-1.5 text-[#7a9fad]">Valuations are self-reported. Update regularly to keep your wellness score accurate.</p></>} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {assets.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => { setPrivateEditMode((v) => !v); setPrivateConfirmDeleteId(null) }}
+                            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                            style={{
+                              borderColor: privateEditMode ? COLORS.purple : COLORS.border,
+                              color: privateEditMode ? COLORS.purple : COLORS.textDim,
+                              background: privateEditMode ? `${COLORS.purple}10` : 'transparent',
+                            }}
+                          >
+                            <Pencil size={12} />
+                            Edit
+                          </button>
+                        )}
+                        <AddButton label="Add Asset" color={COLORS.purple} onClick={() => { setPrivateForm(emptyPrivateForm()); setPrivateAddError(null); setShowAddPrivateModal(true) }} />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-[#cae7ee]">
+                            {['Asset', 'Type', 'Invested', 'Current Val.', 'Gain / Loss', 'Exit Est.', ...(privateEditMode ? [''] : [])].map((h) => (
+                              <th key={h} className="px-2.5 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-[#7a9fad]">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {assets.map((a) => {
+                            const gain = a.currentValuation - a.initialInvestment
+                            const gainPct = a.initialInvestment > 0 ? parseFloat(((gain / a.initialInvestment) * 100).toFixed(1)) : 0
+                            const isConfirming = privateConfirmDeleteId === a.id
+                            return (
+                              <tr
+                                key={a.id}
+                                className="border-b border-[#cae7ee]/30 transition-colors hover:bg-[#f0f8fa]"
+                                style={isConfirming ? { background: `${COLORS.rose}06` } : {}}
+                              >
+                                <td className="px-2.5 py-2.5 text-[13px] font-medium text-[#0d1117]">{a.name}</td>
+                                <td className="px-2.5 py-2.5">
+                                  <span
+                                    className="rounded-md border px-2 py-0.5 text-[11px] font-semibold"
+                                    style={{
+                                      borderColor: `${privateTypeColors[a.assetType] ?? COLORS.amber}40`,
+                                      background: `${privateTypeColors[a.assetType] ?? COLORS.amber}12`,
+                                      color: privateTypeColors[a.assetType] ?? COLORS.amber,
+                                    }}
+                                  >
+                                    {a.assetType}
+                                  </span>
+                                </td>
+                                <td className="px-2.5 py-2.5 text-[12px] text-[#3a5260]">{fmt(a.initialInvestment)}</td>
+                                <td className="px-2.5 py-2.5 text-[13px] font-semibold text-[#0d1117]">{fmt(a.currentValuation)}</td>
+                                <td className="px-2.5 py-2.5">
+                                  <span className={`text-[12px] font-bold ${gainPct >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'}`}>
+                                    {gainPct >= 0 ? '+' : ''}{gainPct}%
+                                  </span>
+                                </td>
+                                <td className="px-2.5 py-2.5 text-[11px] text-[#7a9fad]">{a.exitTimeline || '—'}</td>
+                                {privateEditMode && (
+                                  <td className="px-2.5 py-2.5">
+                                    {isConfirming ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] text-[#7a9fad]">Delete?</span>
+                                        <button
+                                          type="button"
+                                          disabled={privateDeleting}
+                                          onClick={async () => {
+                                            setPrivateDeleting(true)
+                                            try {
+                                              await deletePrivateAsset(a.id)
+                                              setPrivateConfirmDeleteId(null)
+                                            } finally { setPrivateDeleting(false) }
+                                          }}
+                                          className="rounded-lg px-2 py-0.5 text-[11px] font-semibold text-white disabled:opacity-60"
+                                          style={{ background: COLORS.rose }}
+                                        >
+                                          {privateDeleting ? '…' : 'Yes'}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setPrivateConfirmDeleteId(null)}
+                                          className="rounded-lg border px-2 py-0.5 text-[11px] font-semibold"
+                                          style={{ borderColor: COLORS.border, color: COLORS.textDim }}
+                                        >
+                                          No
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingPrivateId(a.id)
+                                            setPrivateForm({
+                                              name: a.name,
+                                              assetType: a.assetType,
+                                              initialInvestment: a.initialInvestment,
+                                              currentValuation: a.currentValuation,
+                                              exitTimeline: a.exitTimeline,
+                                            })
+                                            setPrivateAddError(null)
+                                          }}
+                                          className="flex h-7 w-7 items-center justify-center rounded-lg border transition-colors hover:bg-[#e4f2f5]"
+                                          style={{ borderColor: COLORS.border }}
+                                          title="Edit"
+                                        >
+                                          <Pencil size={13} style={{ color: COLORS.purple }} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setPrivateConfirmDeleteId(a.id)}
+                                          className="flex h-7 w-7 items-center justify-center rounded-lg border transition-colors hover:bg-[#fdecea]"
+                                          style={{ borderColor: COLORS.border }}
+                                          title="Delete"
+                                        >
+                                          <Trash2 size={13} style={{ color: COLORS.rose }} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                )}
+                              </tr>
+                            )
+                          })}
+                          {assets.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="px-2.5 py-8 text-center text-[12px] text-[#7a9fad]">
+                                No private assets yet — click "Add Asset" to get started.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+
+                  {/* Right: type mix pie */}
+                  <Card className="flex flex-col gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="text-sm font-semibold text-[#0d1117]">Asset Type Mix</div>
+                      <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Asset Type Mix</p><p>Proportion of your private portfolio allocated to each illiquid asset category.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Type % = Type Value / Total Private Value</p></>} />
+                    </div>
+                    {typeMix.length > 0 ? (
+                      <>
+                        <PieChart width={196} height={148}>
+                          <Pie data={typeMix} cx={98} cy={68} innerRadius={38} outerRadius={62} dataKey="v" paddingAngle={3}>
+                            {typeMix.map((s, i) => <Cell key={i} fill={s.c} />)}
+                          </Pie>
+                        </PieChart>
+                        <div className="flex flex-col gap-2">
+                          {typeMix.map((s, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-2 w-2 rounded-sm" style={{ background: s.c }} />
+                                <span className="text-[11px] text-[#3a5260]">{s.n}</span>
+                              </div>
+                              <span className="text-[11px] font-semibold text-[#0d1117]">{s.v}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-1 items-center justify-center py-10 text-[11px] text-[#7a9fad]">
+                        No data yet
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              </>
+            )
+          })()}
         </>
       ) : active === 'digital' ? (
         <>
@@ -1790,6 +2053,236 @@ export function AssetsSection() {
                   style={{ background: COLORS.primary }}
                 >
                   {submitting ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Private Asset modal ── */}
+      {showAddPrivateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setShowAddPrivateModal(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => setShowAddPrivateModal(false)} className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40">
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+            <div className="mb-5">
+              <div className="text-base font-semibold text-[#0d1117]">Add Private Asset</div>
+              <div className="mt-0.5 text-[11px] text-[#7a9fad]">Record an illiquid holding manually</div>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setPrivateSubmitting(true)
+                setPrivateAddError(null)
+                try {
+                  await addPrivateAsset(privateForm)
+                  setShowAddPrivateModal(false)
+                  setPrivateForm(emptyPrivateForm())
+                } catch (err) {
+                  setPrivateAddError(err instanceof Error ? err.message : 'Failed to add. Is the backend running?')
+                } finally { setPrivateSubmitting(false) }
+              }}
+              className="flex flex-col gap-3.5"
+            >
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Asset Name</label>
+                <input
+                  required
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  placeholder="e.g. Andreessen Horowitz Fund IV"
+                  value={privateForm.name}
+                  onChange={(e) => setPrivateForm({ ...privateForm, name: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Asset Type</label>
+                <select
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  value={privateForm.assetType}
+                  onChange={(e) => setPrivateForm({ ...privateForm, assetType: e.target.value as typeof privateForm.assetType })}
+                >
+                  {PRIVATE_ASSET_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Initial Investment ($)</label>
+                  <input
+                    required type="number" min={0} step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="0"
+                    value={privateForm.initialInvestment || ''}
+                    onChange={(e) => setPrivateForm({ ...privateForm, initialInvestment: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Current Valuation ($)</label>
+                  <input
+                    required type="number" min={0} step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    placeholder="0"
+                    value={privateForm.currentValuation || ''}
+                    onChange={(e) => setPrivateForm({ ...privateForm, currentValuation: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Expected Exit Timeline</label>
+                <input
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  placeholder="e.g. 2028 or 2027–2029"
+                  value={privateForm.exitTimeline}
+                  onChange={(e) => setPrivateForm({ ...privateForm, exitTimeline: e.target.value })}
+                />
+              </div>
+              {privateAddError && (
+                <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+                  {privateAddError}
+                </div>
+              )}
+              <div className="mt-1 flex gap-2">
+                <button type="button" onClick={() => setShowAddPrivateModal(false)} className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] hover:bg-[#f0f8fa]" style={{ borderColor: COLORS.border }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={privateSubmitting} className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60" style={{ background: COLORS.purple }}>
+                  {privateSubmitting ? 'Adding…' : 'Add Asset'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Private Asset modal ── */}
+      {editingPrivateId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setEditingPrivateId(null)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => setEditingPrivateId(null)} className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40">
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+            <div className="mb-5">
+              <div className="text-base font-semibold text-[#0d1117]">Edit Private Asset</div>
+              <div className="mt-0.5 text-[11px] text-[#7a9fad]">Update valuation or details</div>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!editingPrivateId) return
+                setPrivateSubmitting(true)
+                setPrivateAddError(null)
+                try {
+                  await updatePrivateAsset(editingPrivateId, privateForm)
+                  setEditingPrivateId(null)
+                } catch (err) {
+                  setPrivateAddError(err instanceof Error ? err.message : 'Failed to update. Is the backend running?')
+                } finally { setPrivateSubmitting(false) }
+              }}
+              className="flex flex-col gap-3.5"
+            >
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Asset Name</label>
+                <input
+                  required
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  value={privateForm.name}
+                  onChange={(e) => setPrivateForm({ ...privateForm, name: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Asset Type</label>
+                <select
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  value={privateForm.assetType}
+                  onChange={(e) => setPrivateForm({ ...privateForm, assetType: e.target.value as typeof privateForm.assetType })}
+                >
+                  {PRIVATE_ASSET_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Initial Investment ($)</label>
+                  <input
+                    required type="number" min={0} step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={privateForm.initialInvestment || ''}
+                    onChange={(e) => setPrivateForm({ ...privateForm, initialInvestment: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Current Valuation ($)</label>
+                  <input
+                    required type="number" min={0} step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={privateForm.currentValuation || ''}
+                    onChange={(e) => setPrivateForm({ ...privateForm, currentValuation: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Expected Exit Timeline</label>
+                <input
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  placeholder="e.g. 2028 or 2027–2029"
+                  value={privateForm.exitTimeline}
+                  onChange={(e) => setPrivateForm({ ...privateForm, exitTimeline: e.target.value })}
+                />
+              </div>
+              {privateAddError && (
+                <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+                  {privateAddError}
+                </div>
+              )}
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  disabled={privateDeleting || privateSubmitting}
+                  onClick={async () => {
+                    if (!editingPrivateId) return
+                    setPrivateDeleting(true)
+                    try {
+                      await deletePrivateAsset(editingPrivateId)
+                      setEditingPrivateId(null)
+                    } finally { setPrivateDeleting(false) }
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-[#fdecea] disabled:opacity-60"
+                  style={{ borderColor: `${COLORS.rose}40`, color: COLORS.rose }}
+                >
+                  <Trash2 size={13} />
+                  {privateDeleting ? 'Deleting…' : 'Delete'}
+                </button>
+                <button type="button" onClick={() => { setEditingPrivateId(null); setPrivateAddError(null) }} className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] hover:bg-[#f0f8fa]" style={{ borderColor: COLORS.border }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={privateSubmitting} className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60" style={{ background: COLORS.purple }}>
+                  {privateSubmitting ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
             </form>
