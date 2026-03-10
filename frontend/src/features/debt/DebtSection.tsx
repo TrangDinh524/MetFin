@@ -4,6 +4,7 @@ import { CreditCard, Activity, TrendingDown, Plus, X, Upload, FileText, CheckCir
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
+import { InfoTooltip } from '../../components/ui/InfoTooltip'
 import { useFinanceStore } from '../../store/useFinanceStore'
 import { api, type ApiDebtItemWithId } from '../../lib/api'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
@@ -101,6 +102,7 @@ export function DebtSection() {
           note={isEmpty ? '—' : 'vs last yr'}
           color={COLORS.rose}
           Icon={CreditCard}
+          info={<><p className="mb-1 font-semibold text-[#0d1117]">Total Debt</p><p>Sum of all outstanding balances across every debt account you track.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Total Debt = Σ(account balances)</p></>}
         />
         <StatCard
           label="Monthly Payments"
@@ -109,6 +111,7 @@ export function DebtSection() {
           note={isEmpty ? '—' : 'unchanged'}
           color={COLORS.amber}
           Icon={Activity}
+          info={<><p className="mb-1 font-semibold text-[#0d1117]">Monthly Payments</p><p>Total of all minimum required payments due each month across your debt accounts.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Monthly = Σ(monthly payment per account)</p></>}
         />
         <StatCard
           label="Avg Interest Rate"
@@ -117,13 +120,15 @@ export function DebtSection() {
           note={isEmpty ? '—' : 'vs last yr'}
           color={COLORS.mint}
           Icon={TrendingDown}
+          info={<><p className="mb-1 font-semibold text-[#0d1117]">Avg Interest Rate</p><p>Balance-weighted average APR across all your debt accounts. Higher balance accounts influence this more.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Avg Rate = Σ(rate × balance) / Total Debt</p></>}
         />
       </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_262px]">
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-semibold text-[#0d1117]">
-              Debt Accounts
+            <div className="flex items-center gap-1.5">
+              <div className="text-sm font-semibold text-[#0d1117]">Debt Accounts</div>
+              <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Debt Accounts</p><p>All your tracked liabilities — mortgages, credit cards, personal loans, student loans, and more.</p><p className="mt-1.5 text-[#7a9fad]">Track balance, monthly payment, and interest rate for each.</p></>} />
             </div>
             <div className="flex items-center gap-2">
               {!isEmpty && (
@@ -274,8 +279,9 @@ export function DebtSection() {
           )}
         </Card>
         <Card className="flex flex-col gap-3">
-          <div className="text-sm font-semibold text-[#0d1117]">
-            Breakdown
+          <div className="flex items-center gap-1.5">
+            <div className="text-sm font-semibold text-[#0d1117]">Breakdown</div>
+            <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Debt Breakdown</p><p>Distribution of your total debt across account types, shown as a percentage of total outstanding balance.</p></>} />
           </div>
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center gap-2 py-8">
@@ -332,8 +338,9 @@ export function DebtSection() {
             </>
           )}
           <div className="rounded-xl border border-[#cae7ee] bg-[#f0f8fa] p-3 text-center">
-            <div className="text-[10px] uppercase tracking-wider text-[#7a9fad]">
+            <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-[#7a9fad]">
               Debt-to-Asset Ratio
+              <InfoTooltip content={<><p className="mb-1 font-semibold text-[#0d1117]">Debt-to-Asset Ratio</p><p>Measures how much of your total assets are financed by debt.</p><p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">Ratio = Total Debt / Total Assets × 100</p><p className="mt-1.5 text-[#7a9fad]">Healthy: below 35%</p></>} size={10} />
             </div>
             <div className="text-2xl font-bold text-[#d4860a]">
               {(dashboard?.stats.totalAssets ?? 0) > 0 && total > 0
