@@ -43,6 +43,22 @@ def add_debt(body: DebtCreate):
     return data
 
 
+@router.put("/{debt_id}", response_model=DebtResponse)
+def update_debt(debt_id: str, body: DebtCreate):
+    """Update an existing debt item and return the updated list."""
+    data = _load()
+    for item in data["items"]:
+        if item["id"] == debt_id:
+            item["name"] = body.name
+            item["type"] = body.type
+            item["balance"] = body.balance
+            item["monthly"] = body.monthly
+            item["rate"] = body.rate
+            break
+    _save(data)
+    return data
+
+
 @router.delete("/{debt_id}", response_model=DebtResponse)
 def delete_debt(debt_id: str):
     """Remove a debt item by id and return the updated list."""
