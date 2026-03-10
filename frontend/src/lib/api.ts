@@ -307,6 +307,29 @@ export interface AdvisorChatResponse {
   reply: string
 }
 
+// ── Profile ───────────────────────────────────────────────────────
+export interface UserProfile {
+  name: string
+  email: string
+  phone: string
+  bio: string
+  monthlyExpenses: number
+  primaryGoal: string
+  currency: string
+  timezone: string
+}
+
+export interface ProfileUpdateInput {
+  name?: string
+  email?: string
+  phone?: string
+  bio?: string
+  monthlyExpenses?: number
+  primaryGoal?: string
+  currency?: string
+  timezone?: string
+}
+
 export const api = {
   loginWithGoogle: (credential: string) =>
     post<GoogleUser>('/auth/google', { credential }),
@@ -332,4 +355,7 @@ export const api = {
   addPrivateAsset: (body: PrivateAssetCreateInput) => post<PrivateData>('/private', body),
   updatePrivateAsset: (id: string, body: PrivateAssetCreateInput) => put<PrivateData>(`/private/${id}`, body),
   deletePrivateAsset: (id: string) => del<PrivateData>(`/private/${id}`),
+  getProfile: () => get<UserProfile>('/profile'),
+  updateProfile: (body: ProfileUpdateInput) => put<UserProfile>('/profile', body),
+  getGoalOptions: () => get<{ goals: string[] }>('/profile/goals'),
 }

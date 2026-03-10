@@ -16,6 +16,8 @@ import {
   type HoldingCreateInput,
   type DebtCreateInput,
   type ChatMessage,
+  type UserProfile,
+  type ProfileUpdateInput,
 } from '../lib/api'
 
 interface FinanceState {
@@ -69,6 +71,9 @@ interface FinanceState {
   addPrivateAsset: (body: PrivateAssetCreateInput) => Promise<void>
   updatePrivateAsset: (id: string, body: PrivateAssetCreateInput) => Promise<void>
   deletePrivateAsset: (id: string) => Promise<void>
+  profile: UserProfile | null
+  fetchProfile: () => Promise<void>
+  updateProfile: (body: ProfileUpdateInput) => Promise<void>
   fetchWellness: () => Promise<void>
   fetchInsights: () => Promise<void>
   fetchScenarios: () => Promise<void>
@@ -141,6 +146,7 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   banking: null,
   crypto: null,
   privateAssets: null,
+  profile: null,
   wellness: null,
   insights: null,
   scenarioList: null,
@@ -310,6 +316,18 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     } finally {
       set({ loading: false })
     }
+  },
+  fetchProfile: async () => {
+    try {
+      const data = await api.getProfile()
+      set({ profile: data })
+    } catch {
+      // silently fall back to defaults
+    }
+  },
+  updateProfile: async (body) => {
+    const data = await api.updateProfile(body)
+    set({ profile: data })
   },
   fetchWellness: async () => {
     set({ loading: true })
