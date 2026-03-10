@@ -13,6 +13,19 @@ export function ScenarioSection() {
   const fetchScenarios = useFinanceStore((s) => s.fetchScenarios)
   const runScenario = useFinanceStore((s) => s.runScenario)
 
+  const [crashEquityDrop, setCrashEquityDrop] = useState(30)
+  const [crashCryptoDrop, setCrashCryptoDrop] = useState(50)
+  const [jobMonthlyExpenses, setJobMonthlyExpenses] = useState(6500)
+  const [jobMonthsToSim, setJobMonthsToSim] = useState(12)
+  const [purchasePrice, setPurchasePrice] = useState(150000)
+  const [purchaseDownPct, setPurchaseDownPct] = useState(100)
+  const [purchaseClosingPct, setPurchaseClosingPct] = useState(0)
+  const [purchaseApr, setPurchaseApr] = useState(0)
+  const [purchaseTermMonths, setPurchaseTermMonths] = useState(0)
+  const [windfallAmount, setWindfallAmount] = useState(200000)
+  const [retireYears, setRetireYears] = useState(30)
+  const [retireReturnPct, setRetireReturnPct] = useState(7)
+
   useEffect(() => {
     fetchScenarios()
   }, [fetchScenarios])
@@ -22,7 +35,26 @@ export function ScenarioSection() {
       setSel(null)
     } else {
       setSel(id)
-      runScenario(id)
+      const body =
+        id === 'crash'
+          ? { equityDropPct: crashEquityDrop, cryptoDropPct: crashCryptoDrop }
+          : id === 'jobloss'
+            ? { monthlyExpenses: jobMonthlyExpenses, monthsToSimulate: jobMonthsToSim }
+            : id === 'purchase'
+              ? {
+                  purchasePrice,
+                  downPaymentPct: purchaseDownPct / 100,
+                  closingCostPct: purchaseClosingPct / 100,
+                  financeApr: purchaseApr || undefined,
+                  financeTermMonths: purchaseTermMonths || undefined,
+                  monthlyExpenses: jobMonthlyExpenses,
+                }
+              : id === 'windfall'
+                ? { windfallAmount }
+                : id === 'retire'
+                  ? { years: retireYears, annualReturnPct: retireReturnPct }
+                  : undefined
+      runScenario(id, body)
     }
   }
 
@@ -83,7 +115,229 @@ export function ScenarioSection() {
 
       {sel != null && !scenarioLoading && result && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Card>
+          <Card className="flex flex-col gap-4">
+            {sel === 'crash' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Equity Drop (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={crashEquityDrop}
+                    onChange={(e) => setCrashEquityDrop(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Crypto Drop (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={crashCryptoDrop}
+                    onChange={(e) => setCrashCryptoDrop(Number(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            )}
+            {sel === 'jobloss' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Monthly Expenses ($)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={jobMonthlyExpenses}
+                    onChange={(e) => setJobMonthlyExpenses(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Months Simulated
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={jobMonthsToSim}
+                    onChange={(e) => setJobMonthsToSim(Number(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            )}
+            {sel === 'purchase' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Purchase Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Down Payment (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={purchaseDownPct}
+                    onChange={(e) => setPurchaseDownPct(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Closing Costs (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={purchaseClosingPct}
+                    onChange={(e) => setPurchaseClosingPct(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    APR (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={purchaseApr}
+                    onChange={(e) => setPurchaseApr(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Term (months)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={purchaseTermMonths}
+                    onChange={(e) => setPurchaseTermMonths(Number(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            )}
+            {sel === 'windfall' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                  Windfall Amount ($)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                  style={{ borderColor: COLORS.border }}
+                  value={windfallAmount}
+                  onChange={(e) => setWindfallAmount(Number(e.target.value) || 0)}
+                />
+              </div>
+            )}
+            {sel === 'retire' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Years
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={retireYears}
+                    onChange={(e) => setRetireYears(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a9fad]">
+                    Annual Return (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="rounded-lg border px-2 py-1.5 text-[12px] outline-none"
+                    style={{ borderColor: COLORS.border }}
+                    value={retireReturnPct}
+                    onChange={(e) => setRetireReturnPct(Number(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {(sel === 'crash' ||
+              sel === 'jobloss' ||
+              sel === 'purchase' ||
+              sel === 'windfall' ||
+              sel === 'retire') && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="mt-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white"
+                  style={{ background: COLORS.primary }}
+                  onClick={() => {
+                    if (!sel) return
+                    const body =
+                      sel === 'crash'
+                        ? { equityDropPct: crashEquityDrop, cryptoDropPct: crashCryptoDrop }
+                        : sel === 'jobloss'
+                          ? {
+                              monthlyExpenses: jobMonthlyExpenses,
+                              monthsToSimulate: jobMonthsToSim,
+                            }
+                          : sel === 'purchase'
+                            ? {
+                                purchasePrice,
+                                downPaymentPct: purchaseDownPct / 100,
+                                closingCostPct: purchaseClosingPct / 100,
+                                financeApr: purchaseApr || undefined,
+                                financeTermMonths: purchaseTermMonths || undefined,
+                                monthlyExpenses: jobMonthlyExpenses,
+                              }
+                            : sel === 'windfall'
+                              ? { windfallAmount }
+                              : sel === 'retire'
+                                ? { years: retireYears, annualReturnPct: retireReturnPct }
+                                : undefined
+                    runScenario(sel, body)
+                  }}
+                >
+                  Re-run scenario
+                </button>
+              </div>
+            )}
+
+            <div className="mt-1 border-t border-[#cae7ee] pt-3">
             <div className="mb-1 text-sm font-semibold text-[#0d1117]">
               {result.result.title}
             </div>
@@ -138,6 +392,7 @@ export function ScenarioSection() {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           </Card>
           <Card>

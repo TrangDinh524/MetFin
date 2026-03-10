@@ -50,7 +50,7 @@ interface FinanceState {
   fetchWellness: () => Promise<void>
   fetchInsights: () => Promise<void>
   fetchScenarios: () => Promise<void>
-  runScenario: (id: string) => Promise<void>
+  runScenario: (id: string, body?: unknown) => Promise<void>
 }
 
 export const useFinanceStore = create<FinanceState>((set) => ({
@@ -191,10 +191,10 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       set({ loading: false })
     }
   },
-  runScenario: async (id: string) => {
+  runScenario: async (id: string, body?: unknown) => {
     set({ scenarioLoading: true, scenarioResult: null })
     try {
-      const data = await api.runScenario(id)
+      const data = await api.runScenario(id, body)
       set({ scenarioResult: data })
     } finally {
       set({ scenarioLoading: false })

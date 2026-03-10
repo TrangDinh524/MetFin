@@ -245,5 +245,5 @@ export const api = {
   getWellness: () => get<WellnessData>('/wellness'),
   getInsights: () => get<InsightsData>('/insights'),
   getScenarios: () => get<ScenarioListData>('/scenarios'),
-  runScenario: (id: string) => post<ScenarioRunData>(`/scenarios/${id}`),
+  runScenario: (id: string, body?: unknown) => post<ScenarioRunData>(`/scenarios/${id}`, body),
 }

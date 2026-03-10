@@ -211,3 +211,27 @@ class ScenarioListResponse(BaseModel):
 class ScenarioRunResponse(BaseModel):
     scenario: ScenarioOption
     result: ScenarioResult
+
+
+class ScenarioRunRequest(BaseModel):
+    # Market Crash inputs
+    equityDropPct: Optional[float] = None
+    cryptoDropPct: Optional[float] = None
+
+    # Job Loss inputs
+    monthlyExpenses: Optional[float] = None
+    monthsToSimulate: Optional[int] = None
+
+    # Major Purchase inputs
+    purchasePrice: Optional[float] = None
+    downPaymentPct: Optional[float] = None
+    closingCostPct: Optional[float] = None
+    financeApr: Optional[float] = None
+    financeTermMonths: Optional[int] = None
+
+    # Windfall inputs
+    windfallAmount: Optional[float] = None
+
+    # Retirement inputs
+    annualReturnPct: Optional[float] = None
+    years: Optional[int] = None
