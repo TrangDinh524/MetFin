@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
-import { CreditCard, Activity, TrendingDown } from 'lucide-react'
+import { CreditCard, Activity, TrendingDown, PlusCircle } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
@@ -26,6 +26,39 @@ export function DebtSection() {
   }
 
   const debtItems = dashboard.debtItems
+
+  if (debtItems.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatCard label="Total Debt" value="$0" change={0} note="no debts added" color={COLORS.rose} Icon={CreditCard} />
+          <StatCard label="Monthly Payments" value="$0" change={0} note="no debts added" color={COLORS.amber} Icon={Activity} />
+          <StatCard label="Avg Interest Rate" value="0%" change={0} note="no debts added" color={COLORS.mint} Icon={TrendingDown} />
+        </div>
+        <Card className="flex flex-col items-center justify-center gap-4 py-16">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: `${COLORS.rose}14` }}
+          >
+            <CreditCard size={30} style={{ color: COLORS.rose }} />
+          </div>
+          <div className="text-center">
+            <div className="text-[15px] font-semibold text-[#0d1117]">No debts tracked yet</div>
+            <div className="mt-1 max-w-xs text-[13px] text-[#7a9fad]">
+              Add your loans, credit cards, and other liabilities to track balances, rates, and payoff progress.
+            </div>
+          </div>
+          <button
+            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90"
+            style={{ background: COLORS.rose }}
+          >
+            <PlusCircle size={15} />
+            Add your first debt
+          </button>
+        </Card>
+      </div>
+    )
+  }
   const total = debtItems.reduce((a, d) => a + d.balance, 0)
   const monthly = debtItems.reduce((a, d) => a + d.monthly, 0)
   const dd = debtItems.map((d, i) => ({
