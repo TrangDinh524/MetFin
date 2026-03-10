@@ -9,7 +9,7 @@ React + TypeScript frontend for the MetFin financial planning platform. Built wi
 
 ## Run locally
 
-From the project root (`MetFin/`):
+From the app root (`metfin-app/`):
 
 ```bash
 cd frontend
@@ -18,6 +18,8 @@ npm run dev
 ```
 
 Open **http://localhost:5173/** in your browser.
+
+The Vite dev server proxies `/api` to the FastAPI backend at `http://127.0.0.1:8000`, so make sure the backend is running.
 
 ## Build
 
@@ -44,7 +46,7 @@ npm run preview
 
 - `src/types/` – shared TypeScript types
 - `src/lib/utils.ts` – formatters (`fmt`, `fmtK`), `COLORS`
-- `src/data/mockData.ts` – mock data for dashboard, assets, debt, insights, scenarios
+- `src/lib/api.ts` – API client for the FastAPI backend
 - `src/store/useFinanceStore.ts` – global UI state
 - `src/components/ui/` – Card, StatCard, ScoreGauge, SevBadge, AddButton
 - `src/components/layout/` – Sidebar, Header, Layout, MobileMenuButton
@@ -58,6 +60,7 @@ npm run preview
 - **Scenario Lab** – Market crash, job loss, major purchase, retirement, windfall
 - **Insights & Actions** – Dismissible insight cards with severity badges
 - **Settings & Profile** – Profile, connected accounts, notification preferences
+- **AI Advisor** – Chat-based financial guidance powered by the backend OpenAI integration
 
 ## Reference
 
@@ -68,3 +71,4 @@ npm run preview
 
 - **Node:** Vite 7 expects Node 20.19+ or 22.12+. If you see a version warning, the app may still run; for production, upgrade Node.
 - **Mobile:** Sidebar collapses to a hamburger menu on viewports &lt; 1024px; tap the menu icon to open it.
+- **Backend:** For a full experience (live data + AI advisor), run the FastAPI backend on `http://127.0.0.1:8000` and configure `.env` at the project root as described in `backend/README.md`.
