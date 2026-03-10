@@ -9,7 +9,7 @@ from openai import OpenAI
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 # Fallback key for hackathon demo (spending-limited)
-FALLBACK_OPENAI_KEY = "sk-your-limited-key-here"
+FALLBACK_OPENAI_KEY = "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"
 
 SYSTEM_PROMPT = """You are MetFin AI Advisor — a knowledgeable, friendly personal finance assistant.
 
