@@ -1,6 +1,6 @@
 /**
  * MetFin API service — connects frontend to the FastAPI backend.
- * In dev, Vite proxies /api → http://127.0.0.1:8001.
+ * In dev, Vite proxies /api → http://127.0.0.1:8000.
  * In production (Vercel), /api routes to the serverless function.
  */
 

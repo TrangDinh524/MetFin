@@ -11,10 +11,10 @@ import {
   ArrowUpRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { useEffect } from 'react'
 import { useFinanceStore } from '../../store/useFinanceStore'
 import type { SectionId } from '../../types'
-import { wellnessScore } from '../../data/mockData'
-import { COLORS } from '../../lib/utils'
+import { COLORS, fmtK } from '../../lib/utils'
 
 interface NavItem {
   id: SectionId
@@ -75,8 +75,20 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { section, expanded, setSection, toggleExpanded } = useFinanceStore()
+  const dashboard = useFinanceStore((s) => s.dashboard)
+  const wellness = useFinanceStore((s) => s.wellness)
+  const fetchDashboard = useFinanceStore((s) => s.fetchDashboard)
+  const fetchWellness = useFinanceStore((s) => s.fetchWellness)
+
+  useEffect(() => {
+    if (!dashboard) fetchDashboard()
+    if (!wellness) fetchWellness()
+  }, [dashboard, wellness, fetchDashboard, fetchWellness])
 
   const base = section.split('-')[0] as SectionId
+  const netWorth = dashboard?.stats.netWorth
+  const netWorthChange = dashboard?.stats.netWorthChange
+  const wellnessScore = wellness?.score
 
   return (
     <>
@@ -111,25 +123,37 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               Net Worth
             </div>
             <div className="text-[22px] font-bold tracking-tight text-[#0d1117]">
-              $1.02M
+              {netWorth != null ? fmtK(netWorth) : '—'}
             </div>
             <div className="mt-1 flex items-center gap-1">
-              <ArrowUpRight size={11} className="text-[#1cb08a]" />
-              <span className="text-[11px] font-semibold text-[#1cb08a]">
-                +24.9%
-              </span>
-              <span className="text-[11px] text-[#7a9fad]">YTD</span>
+              {netWorthChange != null ? (
+                <>
+                  <ArrowUpRight
+                    size={11}
+                    className={netWorthChange >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'}
+                  />
+                  <span
+                    className={`text-[11px] font-semibold ${netWorthChange >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'}`}
+                  >
+                    {netWorthChange >= 0 ? '+' : ''}
+                    {netWorthChange}%
+                  </span>
+                  <span className="text-[11px] text-[#7a9fad]">YTD</span>
+                </>
+              ) : (
+                <span className="text-[11px] text-[#7a9fad]">Loading…</span>
+              )}
             </div>
             <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-[#cae7ee] bg-[#f0f8fa] p-2">
               <span className="text-[10px] text-[#7a9fad]">Wellness</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded bg-[#cae7ee]">
                 <div
                   className="h-full rounded bg-[#55b2c9]"
-                  style={{ width: `${wellnessScore}%` }}
+                  style={{ width: `${wellnessScore ?? 0}%` }}
                 />
               </div>
               <span className="text-[11px] font-bold text-[#3d96ad]">
-                {wellnessScore}
+                {wellnessScore ?? '—'}
               </span>
             </div>
           </div>
