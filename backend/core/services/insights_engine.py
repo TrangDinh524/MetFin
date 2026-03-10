@@ -13,7 +13,10 @@ COLORS = {
     "purple": "#7155c9",
 }
 
-MONTHLY_EXPENSES = 6500
+MONTHLY_EXPENSES = 10_000
+
+LIQUID_ACCOUNT_TYPES = {"Checking", "MoneyMarket"}
+INSTITUTION_THRESHOLD = 35_000
 
 
 def _load_all():
@@ -36,7 +39,10 @@ def generate_insights() -> list[dict]:
     net_worth = inv_total + bank_total + crypto_total
 
     alloc = inv["summary"]["allocation"]
-    liquid_cash = bank_total + (inv_total * alloc.get("Cash", 0) / 100)
+    liquid_cash = sum(
+        a["balance"] for a in bank["accounts"]
+        if a["accountType"] in LIQUID_ACCOUNT_TYPES
+    ) + (inv_total * alloc.get("Cash", 0) / 100)
     months_covered = liquid_cash / MONTHLY_EXPENSES if MONTHLY_EXPENSES else 0
 
     insights = []
@@ -49,7 +55,7 @@ def generate_insights() -> list[dict]:
             "sev": "critical",
             "icon": "Zap",
             "title": "Low Liquidity Buffer",
-            "desc": f"Tier 1 assets cover only {months_covered:.1f} months of expenses. Target: 6 months.",
+            "desc": f"Immediately accessible cash covers only {months_covered:.1f} months of expenses. Target: 6 months.",
             "action": "Boost Cash",
             "color": COLORS["rose"],
         })
@@ -85,21 +91,21 @@ def generate_insights() -> list[dict]:
         })
         idx += 1
 
-    # 4. FDIC exposure
+    # 4. Institutional concentration
     bank_by_institution: dict[str, float] = {}
     for acct in bank["accounts"]:
         bank_by_institution.setdefault(acct["bankName"], 0)
         bank_by_institution[acct["bankName"]] += acct["balance"]
 
     for name, total in bank_by_institution.items():
-        if total > 250000:
-            over = total - 250000
+        if total > INSTITUTION_THRESHOLD:
+            pct_of_deposits = total / bank_total * 100 if bank_total else 0
             insights.append({
                 "id": idx,
                 "sev": "tip",
                 "icon": "Shield",
-                "title": "FDIC Exposure Detected",
-                "desc": f"${over:,.0f} at {name} exceeds the $250K FDIC limit.",
+                "title": f"High Concentration at {name}",
+                "desc": f"${total:,.0f} ({pct_of_deposits:.0f}% of deposits) at a single institution. Diversify for better FDIC safety and yields.",
                 "action": "Spread Deposits",
                 "color": COLORS["purple"],
             })

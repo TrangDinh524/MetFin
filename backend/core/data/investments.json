@@ -18,10 +18,10 @@
       "International": 18
     },
     "sectors": {
-      "Tech": 53.9,
-      "ETF": 25.9,
-      "Bonds": 9.0,
-      "Cash": 11.2
+      "Tech": 70.0,
+      "ETF": 17.0,
+      "Bonds": 8.0,
+      "Cash": 5.0
     }
   },
   "holdings": [

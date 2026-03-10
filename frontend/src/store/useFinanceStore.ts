@@ -29,6 +29,8 @@ interface FinanceState {
   toggleExpanded: (key: 'assets' | 'debt' | 'settings') => void
   dismissedInsights: number[]
   dismissInsight: (index: number) => void
+  restoreInsight: (index: number) => void
+  restoreAllInsights: () => void
 
   // API data
   loading: boolean
@@ -108,6 +110,11 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     set((s) => ({
       dismissedInsights: [...s.dismissedInsights, index].sort((a, b) => a - b),
     })),
+  restoreInsight: (index) =>
+    set((s) => ({
+      dismissedInsights: s.dismissedInsights.filter((i) => i !== index),
+    })),
+  restoreAllInsights: () => set({ dismissedInsights: [] }),
 
   // API data
   loading: false,
