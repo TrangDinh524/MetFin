@@ -9,10 +9,10 @@ React + TypeScript frontend for the MetFin financial planning platform. Built wi
 
 ## Run locally
 
-From the project root (`FinTech/`):
+From the project root (`MetFin/`):
 
 ```bash
-cd metfin-app
+cd frontend
 npm install
 npm run dev
 ```
