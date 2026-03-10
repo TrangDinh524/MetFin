@@ -9,15 +9,28 @@ router = APIRouter(prefix="/api/investments", tags=["Investments"])
 
 DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "investments.json"
 
+# In-memory store — populated on first request, survives within a process instance.
+# This allows adds to work on read-only filesystems (e.g. Vercel serverless).
+_store: dict | None = None
+
 
 def _load() -> dict:
-    with open(DATA_FILE) as f:
-        return json.load(f)
+    global _store
+    if _store is None:
+        with open(DATA_FILE) as f:
+            _store = json.load(f)
+    return _store
 
 
 def _save(data: dict) -> None:
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    """Persist to disk when possible (local dev). On read-only FS (Vercel) silently skip."""
+    global _store
+    _store = data
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except OSError:
+        pass
 
 
 @router.get("", response_model=InvestmentResponse)
