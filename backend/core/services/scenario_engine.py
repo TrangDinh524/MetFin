@@ -66,7 +66,7 @@ def run_scenario(scenario_id: str) -> dict:
         total_loss = equity_loss + crypto_loss
         projected = current_nw - total_loss
 
-        from api.services.wellness_engine import compute_wellness
+        from core.services.wellness_engine import compute_wellness
         wellness = compute_wellness()
         new_score = max(0, wellness["score"] - 22)
 

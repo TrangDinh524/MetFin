@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios
+from core.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios
 
 app = FastAPI(
     title="MetFin API",

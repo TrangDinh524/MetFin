@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
-from api.models.schemas import InvestmentResponse, Holding
+from core.models.schemas import InvestmentResponse, Holding
 
 router = APIRouter(prefix="/api/investments", tags=["Investments"])
 

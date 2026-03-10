@@ -1,7 +1,7 @@
 """Insights router — portfolio risk insights & actions."""
 from fastapi import APIRouter
-from api.models.schemas import InsightsResponse
-from api.services.insights_engine import generate_insights
+from core.models.schemas import InsightsResponse
+from core.services.insights_engine import generate_insights
 
 router = APIRouter(prefix="/api/insights", tags=["Insights"])
 

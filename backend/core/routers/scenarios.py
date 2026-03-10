@@ -1,7 +1,7 @@
 """Scenarios router — list & run what-if scenario simulations."""
 from fastapi import APIRouter, HTTPException
-from api.models.schemas import ScenarioListResponse, ScenarioRunResponse
-from api.services.scenario_engine import get_scenarios, run_scenario
+from core.models.schemas import ScenarioListResponse, ScenarioRunResponse
+from core.services.scenario_engine import get_scenarios, run_scenario
 
 router = APIRouter(prefix="/api/scenarios", tags=["Scenarios"])
 

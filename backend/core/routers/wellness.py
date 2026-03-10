@@ -1,7 +1,7 @@
 """Wellness router — Wealth Wellness Score endpoint."""
 from fastapi import APIRouter
-from api.models.schemas import WellnessResponse
-from api.services.wellness_engine import compute_wellness
+from core.models.schemas import WellnessResponse
+from core.services.wellness_engine import compute_wellness
 
 router = APIRouter(prefix="/api/wellness", tags=["Wellness"])
 
