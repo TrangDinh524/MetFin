@@ -1,13 +1,7 @@
 import { Card } from '../../components/ui/Card'
 import { COLORS } from '../../lib/utils'
+import { useFinanceStore } from '../../store/useFinanceStore'
 import type { ConnectedAccount } from '../../types'
-
-const profileFields: [string, string][] = [
-  ['Full Name', 'Alex Johnson'],
-  ['Email', 'alex.johnson@email.com'],
-  ['Monthly Expenses', '$6,200'],
-  ['Primary Goal', 'Grow Wealth'],
-]
 
 const connectedAccounts: ConnectedAccount[] = [
   { n: 'Fidelity Brokerage', t: 'Public Investments', s: 'Connected', c: COLORS.mint },
@@ -25,28 +19,48 @@ const notificationPrefs: [string, boolean][] = [
 ]
 
 export function SettingsSection() {
+  const user = useFinanceStore((s) => s.user)
+
+  const fullName = user?.name ?? 'Alex Johnson'
+  const email = user?.email ?? 'alex.johnson@email.com'
+  const picture = user?.picture
+  const initials = fullName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+
+  const profileFields: [string, string][] = [
+    ['Full Name', fullName],
+    ['Email', email],
+    ['Monthly Expenses', '$6,200'],
+    ['Primary Goal', 'Grow Wealth'],
+  ]
+
   return (
     <div className="flex flex-col gap-4">
       <Card>
         <div className="mb-4 text-sm font-semibold text-[#0d1117]">Profile</div>
         <div className="mb-4 flex items-center gap-4">
-          <div
-            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-xl font-bold text-white"
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple})`,
-            }}
-          >
-            A
-          </div>
+          {picture ? (
+            <img
+              src={picture}
+              alt={fullName}
+              className="h-14 w-14 flex-shrink-0 rounded-full border-2 border-[#cae7ee] object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-xl font-bold text-white"
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple})`,
+              }}
+            >
+              {initials}
+            </div>
+          )}
           <div>
             <div className="text-[15px] font-semibold text-[#0d1117]">
-              Alex Johnson
+              {fullName}
             </div>
-            <div className="text-[12px] text-[#3a5260]">
-              alex.johnson@email.com
-            </div>
+            <div className="text-[12px] text-[#3a5260]">{email}</div>
             <div className="mt-0.5 text-[11px] text-[#1cb08a]">
-              ✓ MFA Enabled · Premium Plan
+              ✓ Google Account · Premium Plan
             </div>
           </div>
         </div>
