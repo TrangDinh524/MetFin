@@ -3,8 +3,6 @@ import os
 from fastapi import APIRouter, HTTPException
 from core.models.schemas import AdvisorChatRequest, AdvisorChatResponse
 from core.services.advisor_engine import get_chat_response
-from core.services.advisor_engine import FALLBACK_OPENAI_KEY
-
 
 router = APIRouter(prefix="/api/advisor", tags=["Advisor"])
 
@@ -12,7 +10,7 @@ router = APIRouter(prefix="/api/advisor", tags=["Advisor"])
 @router.get("/status")
 def status():
     """Check whether the AI advisor is configured."""
-    has_key = bool(os.environ.get("OPENAI_API_KEY") or FALLBACK_OPENAI_KEY)
+    has_key = bool(os.environ.get("OPENAI_API_KEY"))
     return {"available": has_key}
 
 

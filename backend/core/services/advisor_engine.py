@@ -8,9 +8,6 @@ from openai import OpenAI
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-# Fallback key for hackathon demo (spending-limited)
-FALLBACK_OPENAI_KEY = "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"
-
 SYSTEM_PROMPT = """You are MetFin AI Advisor — a knowledgeable, friendly personal finance assistant.
 
 You have FULL ACCESS to the user's real financial data provided below. This is THEIR data — treat it
@@ -97,7 +94,7 @@ Items:
 
 def get_chat_response(messages: list[dict]) -> str:
     """Send conversation to OpenAI and return the assistant's reply."""
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY") or FALLBACK_OPENAI_KEY)
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
 
     portfolio_context = _load_portfolio_context()
     system_msg = SYSTEM_PROMPT.format(portfolio_context=portfolio_context)
