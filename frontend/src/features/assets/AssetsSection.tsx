@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2 } from 'lucide-react'
+import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wallet, Key, Link2 } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
@@ -35,6 +35,16 @@ export function AssetsSection() {
   const [form, setForm] = useState<HoldingCreateInput>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+
+  // Coinbase API connection state
+  const [showCoinbaseModal, setShowCoinbaseModal] = useState(false)
+  const [coinbaseConnected, setCoinbaseConnected] = useState(() =>
+    !!localStorage.getItem('metfin_coinbase_connected')
+  )
+  const [coinbaseNickname, setCoinbaseNickname] = useState(() =>
+    localStorage.getItem('metfin_coinbase_nickname') ?? 'My Coinbase'
+  )
+  const [coinbaseForm, setCoinbaseForm] = useState({ nickname: 'My Coinbase', apiKey: '', apiSecret: '' })
 
   function openEditModal(h: typeof holdings[number]) {
     setEditingHolding({ id: h.id, name: h.name, ticker: h.ticker, shares: h.shares, currentPrice: h.currentPrice, costBasis: h.costBasis, sector: h.sector })
@@ -105,6 +115,26 @@ export function AssetsSection() {
     : []
 
   const holdings = investments?.holdings ?? []
+
+  // Digital assets computed
+  const cryptoHoldings = crypto?.holdings ?? []
+  const cryptoGain = cryptoHoldings.reduce((s, h) => s + h.gain, 0)
+  const cryptoCost = cryptoHoldings.reduce((s, h) => s + h.costBasis, 0)
+  const cryptoGainPct = cryptoCost > 0 ? parseFloat(((cryptoGain / cryptoCost) * 100).toFixed(1)) : 0
+  const assetMixColors: Record<string, string> = {
+    Bitcoin: COLORS.amber,
+    Ethereum: COLORS.purple,
+    Stablecoins: COLORS.primary,
+    Altcoins: COLORS.mint,
+    NFTs: COLORS.rose,
+  }
+  const assetMix: SectorItem[] = crypto
+    ? Object.entries(crypto.summary.assetMix).map(([n, v]) => ({
+        n,
+        v,
+        c: assetMixColors[n] ?? COLORS.amber,
+      }))
+    : []
 
   const currentTab = assetTabs.find((t) => t.id === active)
 
@@ -344,6 +374,198 @@ export function AssetsSection() {
             </Card>
           </div>
         </>
+      ) : active === 'digital' ? (
+        <>
+          {/* ── Stat cards ── */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard
+              label="Portfolio Value"
+              value={fmtK(crypto?.summary.totalValue ?? 0)}
+              change={cryptoGainPct}
+              note="all-time"
+              color={COLORS.amber}
+              Icon={Coins}
+            />
+            <StatCard
+              label="All-Time Gain"
+              value={`${cryptoGain >= 0 ? '+' : ''}${fmt(cryptoGain)}`}
+              change={cryptoGainPct}
+              note="total"
+              color={COLORS.mint}
+              Icon={TrendingUp}
+            />
+            <StatCard
+              label="Wallets Tracked"
+              value={(crypto?.summary.walletsTracked ?? 0).toString()}
+              change={cryptoGainPct}
+              note={`${crypto?.summary.liquidity ?? '—'} liquidity`}
+              color={COLORS.purple}
+              Icon={Wallet}
+            />
+          </div>
+
+          {/* ── Holdings + asset mix ── */}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_252px]">
+            <Card>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-[#0d1117]">Coinbase Digital Assets</div>
+                    {coinbaseConnected && (
+                      <span
+                        className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ borderColor: `${COLORS.mint}40`, background: `${COLORS.mint}10`, color: COLORS.mint }}
+                      >
+                        <div className="h-1.5 w-1.5 rounded-full" style={{ background: COLORS.mint }} />
+                        {coinbaseNickname}
+                      </span>
+                    )}
+                  </div>
+                  {!coinbaseConnected && (
+                    <div className="mt-0.5 text-[11px]" style={{ color: COLORS.textMuted }}>
+                      Connect your API to sync live balances
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoinbaseForm({ nickname: coinbaseNickname, apiKey: '', apiSecret: '' })
+                    setShowCoinbaseModal(true)
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                  style={{
+                    borderColor: coinbaseConnected ? COLORS.border : COLORS.amber,
+                    color: coinbaseConnected ? COLORS.textDim : COLORS.amber,
+                    background: coinbaseConnected ? 'transparent' : `${COLORS.amber}10`,
+                  }}
+                >
+                  {coinbaseConnected ? <Link2 size={12} /> : <Key size={12} />}
+                  {coinbaseConnected ? 'Manage' : 'Connect Coinbase API'}
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#cae7ee]">
+                      {['Asset', 'Symbol', 'Quantity', 'Value', 'Gain / Loss', 'Network'].map((h) => (
+                        <th
+                          key={h}
+                          className="px-2.5 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-[#7a9fad]"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cryptoHoldings.map((h) => (
+                      <tr
+                        key={h.id}
+                        className="border-b border-[#cae7ee]/30 transition-colors hover:bg-[#f0f8fa]"
+                      >
+                        <td className="px-2.5 py-2.5 text-[13px] font-medium text-[#0d1117]">{h.name}</td>
+                        <td className="px-2.5 py-2.5">
+                          <span
+                            className="rounded-md border px-2 py-0.5 text-[11px] font-bold"
+                            style={{ borderColor: '#cae7ee', background: `${COLORS.amber}12`, color: COLORS.amber }}
+                          >
+                            {h.symbol}
+                          </span>
+                        </td>
+                        <td className="px-2.5 py-2.5 text-[12px] text-[#3a5260]">
+                          {h.quantity.toLocaleString('en-US', { maximumFractionDigits: 6 })}
+                        </td>
+                        <td className="px-2.5 py-2.5 text-[13px] font-semibold text-[#0d1117]">
+                          {fmt(h.value)}
+                        </td>
+                        <td className="px-2.5 py-2.5">
+                          <span
+                            className={`text-[12px] font-bold ${
+                              h.gainPct >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'
+                            }`}
+                          >
+                            {h.gainPct >= 0 ? '+' : ''}{h.gainPct}%
+                          </span>
+                        </td>
+                        <td className="px-2.5 py-2.5">
+                          <span className="rounded-md bg-[#cae7ee] px-2 py-0.5 text-[11px] text-[#3a5260]">
+                            {h.chain}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* Right panel: Asset Mix + connect-prompt */}
+            <div className="flex flex-col gap-3">
+              <Card className="flex flex-col gap-3">
+                <div className="text-sm font-semibold text-[#0d1117]">Asset Mix</div>
+                <PieChart width={196} height={148}>
+                  <Pie
+                    data={assetMix}
+                    cx={98}
+                    cy={68}
+                    innerRadius={38}
+                    outerRadius={62}
+                    dataKey="v"
+                    paddingAngle={3}
+                  >
+                    {assetMix.map((s, i) => (
+                      <Cell key={i} fill={s.c} />
+                    ))}
+                  </Pie>
+                </PieChart>
+                <div className="flex flex-col gap-2">
+                  {assetMix.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-sm" style={{ background: s.c }} />
+                        <span className="text-[11px] text-[#3a5260]">{s.n}</span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-[#0d1117]">{s.v}%</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {!coinbaseConnected && (
+                <Card className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                      style={{ background: `${COLORS.amber}18` }}
+                    >
+                      <Key size={14} style={{ color: COLORS.amber }} />
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold text-[#0d1117]">Sync Live Prices</div>
+                      <div className="text-[10px]" style={{ color: COLORS.textMuted }}>Coinbase Advanced Trade API</div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: COLORS.textDim }}>
+                    Link a read-only key to pull real‑time balances and prices automatically.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoinbaseForm({ nickname: 'My Coinbase', apiKey: '', apiSecret: '' })
+                      setShowCoinbaseModal(true)
+                    }}
+                    className="w-full rounded-lg py-2 text-[12px] font-semibold text-white"
+                    style={{ background: COLORS.amber, boxShadow: '0 2px 8px rgba(212,134,10,0.25)' }}
+                  >
+                    Connect Now
+                  </button>
+                </Card>
+              )}
+            </div>
+          </div>
+        </>
       ) : (
         <Card className="flex flex-col items-center gap-3 p-14">
           <div
@@ -521,6 +743,173 @@ export function AssetsSection() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Coinbase API Modal ── */}
+      {showCoinbaseModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setShowCoinbaseModal(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCoinbaseModal(false)}
+              className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40"
+            >
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+
+            {/* Header */}
+            <div className="mb-5">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `${COLORS.amber}18` }}
+                >
+                  <Key size={16} style={{ color: COLORS.amber }} />
+                </div>
+                <div>
+                  <div className="text-base font-semibold text-[#0d1117]">
+                    {coinbaseConnected ? 'Manage Coinbase API' : 'Connect Coinbase API'}
+                  </div>
+                  <div className="text-[11px]" style={{ color: COLORS.textMuted }}>
+                    Coinbase Advanced Trade · Read-only
+                  </div>
+                </div>
+              </div>
+
+              {/* Step-by-step guide */}
+              <div
+                className="mt-4 flex flex-col gap-2 rounded-xl p-3"
+                style={{ background: `${COLORS.amber}08`, border: `1px solid ${COLORS.amber}30` }}
+              >
+                <div
+                  className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: COLORS.amber }}
+                >
+                  How to get your API key
+                </div>
+                {[
+                  'Go to coinbase.com → Settings → API',
+                  'Click "New API Key" → select Advanced Trade',
+                  'Enable View permissions only (no trading)',
+                  'Copy the Key Name and Private Key below',
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span
+                      className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                      style={{ background: COLORS.amber }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="text-[11px]" style={{ color: COLORS.textDim }}>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form fields */}
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Nickname</label>
+                <input
+                  className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                  placeholder="e.g. My Coinbase"
+                  value={coinbaseForm.nickname}
+                  onChange={(e) => setCoinbaseForm({ ...coinbaseForm, nickname: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Key Name (API Key)</label>
+                <input
+                  className="rounded-lg border px-3 py-2 font-mono text-[12px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: COLORS.primaryDark }}
+                  placeholder="organizations/abc123…/apiKeys/def456…"
+                  value={coinbaseForm.apiKey}
+                  onChange={(e) => setCoinbaseForm({ ...coinbaseForm, apiKey: e.target.value })}
+                />
+                <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  Format: organizations/&#123;org-id&#125;/apiKeys/&#123;key-id&#125;
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Private Key (API Secret)</label>
+                <textarea
+                  className="rounded-lg border px-3 py-2 font-mono text-[11px] outline-none"
+                  style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117', resize: 'none' }}
+                  rows={3}
+                  placeholder={`-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEI…\n-----END EC PRIVATE KEY-----`}
+                  value={coinbaseForm.apiSecret}
+                  onChange={(e) => setCoinbaseForm({ ...coinbaseForm, apiSecret: e.target.value })}
+                />
+                <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  Stored locally only — never sent to MetFin servers.
+                </span>
+              </div>
+
+              <div
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px]"
+                style={{ background: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}25` }}
+              >
+                <Link2 size={11} style={{ color: COLORS.primary, flexShrink: 0 }} />
+                <span style={{ color: COLORS.textDim }}>
+                  Only read-only permissions are required. MetFin cannot trade or move your funds.
+                </span>
+              </div>
+
+              <div className="mt-1 flex gap-2">
+                {coinbaseConnected && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('metfin_coinbase_connected')
+                      localStorage.removeItem('metfin_coinbase_nickname')
+                      setCoinbaseConnected(false)
+                      setCoinbaseNickname('My Coinbase')
+                      setShowCoinbaseModal(false)
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-[#fdecea]"
+                    style={{ borderColor: `${COLORS.rose}40`, color: COLORS.rose }}
+                  >
+                    Disconnect
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowCoinbaseModal(false)}
+                  className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                  style={{ borderColor: COLORS.border }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nick = coinbaseForm.nickname.trim() || 'My Coinbase'
+                    localStorage.setItem('metfin_coinbase_connected', '1')
+                    localStorage.setItem('metfin_coinbase_nickname', nick)
+                    setCoinbaseConnected(true)
+                    setCoinbaseNickname(nick)
+                    setShowCoinbaseModal(false)
+                  }}
+                  className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60"
+                  style={{ background: COLORS.amber, boxShadow: '0 2px 8px rgba(212,134,10,0.28)' }}
+                >
+                  {coinbaseConnected ? 'Save Changes' : 'Connect Wallet'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
