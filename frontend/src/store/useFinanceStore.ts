@@ -12,6 +12,7 @@ import {
   type ScenarioListData,
   type ScenarioRunData,
   type HoldingCreateInput,
+  type DebtCreateInput,
 } from '../lib/api'
 
 interface FinanceState {
@@ -45,6 +46,7 @@ interface FinanceState {
   fetchDashboard: () => Promise<void>
   fetchInvestments: () => Promise<void>
   addHolding: (body: HoldingCreateInput) => Promise<void>
+  addDebt: (body: DebtCreateInput) => Promise<void>
   fetchBanking: () => Promise<void>
   fetchCrypto: () => Promise<void>
   fetchWellness: () => Promise<void>
@@ -142,6 +144,17 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       const data = await api.addHolding(body)
       set({ investments: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  addDebt: async (body) => {
+    set({ loading: true })
+    try {
+      await api.addDebt(body)
+      // Refresh dashboard so debtItems and stats update
+      const data = await api.getDashboard()
+      set({ dashboard: data })
     } finally {
       set({ loading: false })
     }

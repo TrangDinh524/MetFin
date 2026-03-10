@@ -26,6 +26,7 @@ const emptyForm = (): DebtForm => ({ name: '', type: 'Credit Card', balance: 0, 
 export function DebtSection() {
   const dashboard = useFinanceStore((s) => s.dashboard)
   const fetchDashboard = useFinanceStore((s) => s.fetchDashboard)
+  const addDebt = useFinanceStore((s) => s.addDebt)
 
   useEffect(() => {
     if (!dashboard) fetchDashboard()
@@ -36,9 +37,11 @@ export function DebtSection() {
   const [dragOver, setDragOver] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadParsed, setUploadParsed] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  function openModal() { setModalStep('pick'); setForm(emptyForm()); setUploadedFile(null); setUploadParsed(false) }
+  function openModal() { setModalStep('pick'); setForm(emptyForm()); setUploadedFile(null); setUploadParsed(false); setSubmitError(null) }
   function closeModal() { setModalStep(null) }
 
   function handleFile(file: File) {
@@ -336,7 +339,19 @@ export function DebtSection() {
                   </div>
                 </div>
                 <form
-                  onSubmit={(e) => { e.preventDefault(); closeModal() }}
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    setSubmitting(true)
+                    setSubmitError(null)
+                    try {
+                      await addDebt(form)
+                      closeModal()
+                    } catch (err) {
+                      setSubmitError(err instanceof Error ? err.message : 'Failed to save. Is the backend running?')
+                    } finally {
+                      setSubmitting(false)
+                    }
+                  }}
                   className="flex flex-col gap-3.5"
                 >
                   <div className="flex flex-col gap-1">
@@ -417,6 +432,14 @@ export function DebtSection() {
                       </span>
                     </div>
                   )}
+                  {submitError && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-[12px]"
+                      style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}
+                    >
+                      {submitError}
+                    </div>
+                  )}
                   <div className="mt-1 flex gap-2">
                     <button
                       type="button"
@@ -428,10 +451,11 @@ export function DebtSection() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white"
+                      disabled={submitting}
+                      className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60"
                       style={{ background: COLORS.rose }}
                     >
-                      Add Debt
+                      {submitting ? 'Saving…' : 'Add Debt'}
                     </button>
                   </div>
                 </form>
