@@ -155,6 +155,9 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       const data = await api.addHolding(body)
       set({ investments: data })
+      // Refresh dashboard so Net Worth / Total Assets stay in sync
+      const dash = await api.getDashboard()
+      set({ dashboard: dash })
     } finally {
       set({ loading: false })
     }
@@ -164,6 +167,9 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       const data = await api.updateHolding(id, body)
       set({ investments: data })
+      // Refresh dashboard so Net Worth / Total Assets stay in sync
+      const dash = await api.getDashboard()
+      set({ dashboard: dash })
     } finally {
       set({ loading: false })
     }
@@ -173,6 +179,9 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       const data = await api.deleteHolding(id)
       set({ investments: data })
+      // Refresh dashboard so Net Worth / Total Assets stay in sync
+      const dash = await api.getDashboard()
+      set({ dashboard: dash })
     } finally {
       set({ loading: false })
     }
