@@ -59,7 +59,19 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   loginWithGoogle: async (credential: string) => {
     set({ authLoading: true })
     try {
-      const user = await api.loginWithGoogle(credential)
+      // Decode the Google ID token (JWT) payload directly — no backend needed
+      const payload = JSON.parse(atob(credential.split('.')[1])) as {
+        email: string
+        name: string
+        picture: string
+        sub: string
+      }
+      const user: GoogleUser = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        sub: payload.sub,
+      }
       localStorage.setItem('metfin_user', JSON.stringify(user))
       set({ user })
     } finally {
