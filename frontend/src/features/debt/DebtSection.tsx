@@ -17,15 +17,7 @@ export function DebtSection() {
     if (!dashboard) fetchDashboard()
   }, [dashboard, fetchDashboard])
 
-  if (!dashboard) {
-    return (
-      <div className="flex items-center justify-center py-20 text-[#7a9fad]">
-        Loading debt data…
-      </div>
-    )
-  }
-
-  const debtItems = dashboard.debtItems
+  const debtItems = dashboard?.debtItems ?? []
   const isEmpty = debtItems.length === 0
   const total = debtItems.reduce((a, d) => a + d.balance, 0)
   const monthly = debtItems.reduce((a, d) => a + d.monthly, 0)
@@ -208,7 +200,7 @@ export function DebtSection() {
               Debt-to-Asset Ratio
             </div>
             <div className="text-2xl font-bold text-[#d4860a]">
-              {dashboard.stats.totalAssets > 0 && total > 0
+              {dashboard?.stats.totalAssets > 0 && total > 0
                 ? ((total / dashboard.stats.totalAssets) * 100).toFixed(1)
                 : 0}%
             </div>
