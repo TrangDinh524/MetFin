@@ -1,13 +1,30 @@
+import { useEffect } from 'react'
 import { Card } from '../../components/ui/Card'
 import { SevBadge } from '../../components/ui/SevBadge'
 import { X } from 'lucide-react'
-import { insightsList } from '../../data/mockData'
 import { useFinanceStore } from '../../store/useFinanceStore'
 import { COLORS } from '../../lib/utils'
+import { getIcon } from '../../lib/iconMap'
 
 export function InsightsSection() {
+  const insightsData = useFinanceStore((s) => s.insights)
+  const fetchInsights = useFinanceStore((s) => s.fetchInsights)
   const dismissedInsights = useFinanceStore((s) => s.dismissedInsights)
   const dismissInsight = useFinanceStore((s) => s.dismissInsight)
+
+  useEffect(() => {
+    if (!insightsData) fetchInsights()
+  }, [insightsData, fetchInsights])
+
+  if (!insightsData) {
+    return (
+      <div className="flex items-center justify-center py-20 text-[#7a9fad]">
+        Loading insights…
+      </div>
+    )
+  }
+
+  const insightsList = insightsData.insights
   const visible = insightsList.filter((_, i) => !dismissedInsights.includes(i))
 
   const criticalCount = visible.filter((i) => i.sev === 'critical').length
@@ -47,7 +64,7 @@ export function InsightsSection() {
                 borderColor: `${ins.color}20`,
               }}
             >
-              <ins.Icon size={16} style={{ color: ins.color }} />
+              {(() => { const Icon = getIcon(ins.icon); return <Icon size={16} style={{ color: ins.color }} /> })()}
             </div>
             <div className="flex-1">
               <div className="mb-1 flex items-center gap-2">

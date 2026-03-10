@@ -1,33 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, ArrowUpRight, Activity, Plus } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
-import { holdings } from '../../data/mockData'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import type { SectorItem } from '../../types'
 import { useFinanceStore } from '../../store/useFinanceStore'
-
-const assetTabs = [
-  { id: 'public', label: 'Public Investments', total: fmtK(389120) },
-  { id: 'private', label: 'Private Assets', total: fmtK(184320) },
-  { id: 'employer', label: 'Employer Equity', total: fmtK(225280) },
-  { id: 'digital', label: 'Digital Assets', total: fmtK(122880) },
-  { id: 'bank', label: 'Bank Deposits', total: fmtK(102400) },
-]
-
-const sectors: SectorItem[] = [
-  { n: 'Technology', v: 65, c: COLORS.primary },
-  { n: 'ETF Blended', v: 19, c: COLORS.purple },
-  { n: 'Bonds', v: 9, c: COLORS.mint },
-  { n: 'Other', v: 7, c: COLORS.amber },
-]
 
 export function AssetsSection() {
   const section = useFinanceStore((s) => s.section)
   const subPage = section.startsWith('assets-') ? section.replace('assets-', '') : 'public'
   const [active, setActive] = useState(subPage)
+
+  const investments = useFinanceStore((s) => s.investments)
+  const banking = useFinanceStore((s) => s.banking)
+  const crypto = useFinanceStore((s) => s.crypto)
+  const fetchInvestments = useFinanceStore((s) => s.fetchInvestments)
+  const fetchBanking = useFinanceStore((s) => s.fetchBanking)
+  const fetchCrypto = useFinanceStore((s) => s.fetchCrypto)
+
+  useEffect(() => {
+    fetchInvestments()
+    fetchBanking()
+    fetchCrypto()
+  }, [fetchInvestments, fetchBanking, fetchCrypto])
+
+  // Build tabs from live data (fallback to 0)
+  const invTotal = investments?.summary.totalValue ?? 0
+  const bankTotal = banking?.summary.totalBalance ?? 0
+  const cryptoTotal = crypto?.summary.totalValue ?? 0
+
+  const assetTabs = [
+    { id: 'public', label: 'Public Investments', total: fmtK(invTotal) },
+    { id: 'digital', label: 'Digital Assets', total: fmtK(cryptoTotal) },
+    { id: 'bank', label: 'Bank Deposits', total: fmtK(bankTotal) },
+  ]
+
+  // Sector breakdown from investments API
+  const sectorColors: Record<string, string> = {
+    Technology: COLORS.primary,
+    Bonds: COLORS.mint,
+    ETF: COLORS.purple,
+    Other: COLORS.amber,
+  }
+  const sectors: SectorItem[] = investments
+    ? Object.entries(investments.summary.sectors).map(([n, v]) => ({
+        n,
+        v,
+        c: sectorColors[n] ?? COLORS.amber,
+      }))
+    : []
+
+  const holdings = investments?.holdings ?? []
 
   const currentTab = assetTabs.find((t) => t.id === active)
 
@@ -66,24 +91,24 @@ export function AssetsSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               label="Portfolio Value"
-              value={fmtK(389120)}
-              change={11.2}
+              value={fmtK(investments?.summary.totalValue ?? 0)}
+              change={investments?.summary.allTimeGainPct ?? 0}
               note="YTD"
               color={COLORS.primary}
               Icon={TrendingUp}
             />
             <StatCard
               label="Today's Gain"
-              value="+$1,247"
-              change={0.32}
+              value={`${(investments?.summary.todayGain ?? 0) >= 0 ? '+' : ''}${fmt(investments?.summary.todayGain ?? 0)}`}
+              change={investments?.summary.todayGainPct ?? 0}
               note="today"
               color={COLORS.mint}
               Icon={ArrowUpRight}
             />
             <StatCard
               label="All-Time Gain"
-              value="+$42,100"
-              change={12.1}
+              value={`${(investments?.summary.allTimeGain ?? 0) >= 0 ? '+' : ''}${fmt(investments?.summary.allTimeGain ?? 0)}`}
+              change={investments?.summary.allTimeGainPct ?? 0}
               note="total"
               color={COLORS.purple}
               Icon={Activity}
@@ -114,9 +139,9 @@ export function AssetsSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {holdings.map((h, i) => (
+                    {holdings.map((h) => (
                       <tr
-                        key={i}
+                        key={h.id}
                         className="border-b border-[#cae7ee]/30 transition-colors hover:bg-[#f0f8fa]"
                       >
                         <td className="px-2.5 py-2.5 text-[13px] font-medium text-[#0d1117]">
@@ -124,7 +149,7 @@ export function AssetsSection() {
                         </td>
                         <td className="px-2.5 py-2.5">
                           <span className="rounded-md border border-[#cae7ee] bg-[rgba(85,178,201,0.10)] px-2 py-0.5 text-[11px] font-bold text-[#3d96ad]">
-                            {h.tick}
+                            {h.ticker}
                           </span>
                         </td>
                         <td className="px-2.5 py-2.5 text-[12px] text-[#3a5260]">
@@ -135,10 +160,10 @@ export function AssetsSection() {
                         </td>
                         <td className="px-2.5 py-2.5">
                           <span
-                            className={`text-[12px] font-bold ${h.gain >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'}`}
+                            className={`text-[12px] font-bold ${h.gainPct >= 0 ? 'text-[#1cb08a]' : 'text-[#d44a4a]'}`}
                           >
-                            {h.gain >= 0 ? '+' : ''}
-                            {h.gain}%
+                            {h.gainPct >= 0 ? '+' : ''}
+                            {h.gainPct}%
                           </span>
                         </td>
                         <td className="px-2.5 py-2.5">

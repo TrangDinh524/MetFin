@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AreaChart,
   Area,
@@ -20,14 +20,8 @@ import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { ScoreGauge } from '../../components/ui/ScoreGauge'
 import { useFinanceStore } from '../../store/useFinanceStore'
-import {
-  netWorthHistory,
-  assetAlloc,
-  subScores,
-  wellnessScore,
-  insightsList,
-} from '../../data/mockData'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
+import { getIcon } from '../../lib/iconMap'
 
 const tooltipStyle = {
   contentStyle: {
@@ -45,30 +39,54 @@ const tooltipStyle = {
 export function DashboardSection() {
   const [rng, setRng] = useState('1Y')
   const setSection = useFinanceStore((s) => s.setSection)
+  const dashboard = useFinanceStore((s) => s.dashboard)
+  const wellness = useFinanceStore((s) => s.wellness)
+  const insights = useFinanceStore((s) => s.insights)
+  const fetchDashboard = useFinanceStore((s) => s.fetchDashboard)
+  const fetchWellness = useFinanceStore((s) => s.fetchWellness)
+  const fetchInsights = useFinanceStore((s) => s.fetchInsights)
+
+  useEffect(() => {
+    fetchDashboard()
+    fetchWellness()
+    fetchInsights()
+  }, [fetchDashboard, fetchWellness, fetchInsights])
+
+  if (!dashboard || !wellness || !insights) {
+    return (
+      <div className="flex items-center justify-center py-20 text-[#7a9fad]">
+        Loading dashboard…
+      </div>
+    )
+  }
+
+  const { stats, netWorthHistory, assetAllocation: assetAlloc } = dashboard
+  const { score: wellnessScore, subScores } = wellness
+  const insightsList = insights.insights
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Net Worth"
-          value={fmtK(1024000)}
-          change={24.9}
+          value={fmtK(stats.netWorth)}
+          change={stats.netWorthChange}
           note="YTD"
           color={COLORS.primary}
           Icon={DollarSign}
         />
         <StatCard
           label="Total Assets"
-          value={fmtK(1388700)}
-          change={18.3}
+          value={fmtK(stats.totalAssets)}
+          change={stats.totalAssetsChange}
           note="vs last yr"
           color={COLORS.mint}
           Icon={TrendingUp}
         />
         <StatCard
           label="Total Liabilities"
-          value={fmtK(364700)}
-          change={-3.2}
+          value={fmtK(stats.totalLiabilities)}
+          change={stats.totalLiabilitiesChange}
           note="vs last yr"
           color={COLORS.rose}
           Icon={CreditCard}
@@ -191,7 +209,7 @@ export function DashboardSection() {
             Asset Allocation
           </div>
           <div className="mb-2.5 text-[11px] text-[#7a9fad]">
-            Total: {fmtK(1388700)}
+            Total: {fmtK(stats.totalAssets)}
           </div>
           <div className="flex justify-center">
             <PieChart width={172} height={146}>
@@ -263,7 +281,7 @@ export function DashboardSection() {
                   className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
                   style={{ background: `${ins.color}12` }}
                 >
-                  <ins.Icon size={13} style={{ color: ins.color }} />
+                  {(() => { const Icon = getIcon(ins.icon); return <Icon size={13} style={{ color: ins.color }} /> })()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-0.5 text-[12px] font-semibold text-[#0d1117]">

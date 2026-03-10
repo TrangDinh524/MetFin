@@ -1,14 +1,31 @@
+import { useEffect } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { CreditCard, Activity, TrendingDown } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
-import { debtItems } from '../../data/mockData'
+import { useFinanceStore } from '../../store/useFinanceStore'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 
 const debtColors = [COLORS.primary, COLORS.purple, COLORS.rose, COLORS.rose, COLORS.mint]
 
 export function DebtSection() {
+  const dashboard = useFinanceStore((s) => s.dashboard)
+  const fetchDashboard = useFinanceStore((s) => s.fetchDashboard)
+
+  useEffect(() => {
+    if (!dashboard) fetchDashboard()
+  }, [dashboard, fetchDashboard])
+
+  if (!dashboard) {
+    return (
+      <div className="flex items-center justify-center py-20 text-[#7a9fad]">
+        Loading debt data…
+      </div>
+    )
+  }
+
+  const debtItems = dashboard.debtItems
   const total = debtItems.reduce((a, d) => a + d.balance, 0)
   const monthly = debtItems.reduce((a, d) => a + d.monthly, 0)
   const dd = debtItems.map((d, i) => ({
@@ -149,7 +166,7 @@ export function DebtSection() {
             <div className="text-[10px] uppercase tracking-wider text-[#7a9fad]">
               Debt-to-Asset Ratio
             </div>
-            <div className="text-2xl font-bold text-[#d4860a]">26.3%</div>
+            <div className="text-2xl font-bold text-[#d4860a]">{dashboard.stats.totalAssets > 0 ? ((total / dashboard.stats.totalAssets) * 100).toFixed(1) : 0}%</div>
             <div className="mt-1 text-[11px] text-[#7a9fad]">
               Healthy: below 35%
             </div>
