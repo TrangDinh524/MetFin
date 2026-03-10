@@ -46,6 +46,7 @@ export interface SubScore {
   score: number
   weight: number
   color: string
+  description?: string
 }
 
 export type InsightSeverity = 'critical' | 'warning' | 'tip'

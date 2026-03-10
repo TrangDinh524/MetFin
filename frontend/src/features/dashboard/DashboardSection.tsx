@@ -19,6 +19,7 @@ import {
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { ScoreGauge } from '../../components/ui/ScoreGauge'
+import { InfoTooltip } from '../../components/ui/InfoTooltip'
 import { useFinanceStore } from '../../store/useFinanceStore'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import { getIcon } from '../../lib/iconMap'
@@ -34,6 +35,143 @@ const tooltipStyle = {
     boxShadow: '0 4px 14px rgba(85,178,201,0.12)',
   },
   cursor: false,
+}
+
+// ── Tooltip definitions ───────────────────────────────────────────
+const INFO = {
+  netWorth: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Net Worth</p>
+      <p>Your total financial net worth at a point in time.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Net Worth = Total Assets − Total Liabilities
+      </p>
+      <p className="mt-1.5 text-[#7a9fad]">YTD change shown below.</p>
+    </>
+  ),
+  totalAssets: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Total Assets</p>
+      <p>Sum of everything you own across all accounts.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Assets = Banking + Investments + Crypto
+      </p>
+    </>
+  ),
+  totalLiabilities: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Total Liabilities</p>
+      <p>Sum of all outstanding debt balances you owe.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Liabilities = Loans + Credit Cards + Mortgages + Other Debt
+      </p>
+    </>
+  ),
+  wellnessScore: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Wealth Wellness Score</p>
+      <p>A composite 0–100 score measuring your overall financial health across 5 dimensions.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px] leading-relaxed">
+        Score = Liquidity×25% + Diversification×25%<br />
+        + Growth×20% + Risk Resilience×20%<br />
+        + Concentration Risk×10%
+      </p>
+      <p className="mt-1.5 text-[#7a9fad]">80–100 Excellent · 60–79 Good · 40–59 Fair · &lt;40 Poor</p>
+    </>
+  ),
+  wealthWellnessCard: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Wealth Wellness Score</p>
+      <p>Weighted average of 5 component scores that together paint a complete picture of your financial health.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px] leading-relaxed">
+        Score = Liquidity×25% + Diversification×25%<br />
+        + Growth×20% + Risk Resilience×20%<br />
+        + Concentration Risk×10%
+      </p>
+    </>
+  ),
+  netWorthTrend: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Net Worth Trend</p>
+      <p>Historical view of your Net Worth (Assets − Liabilities) over the selected time range.</p>
+      <p className="mt-1.5 text-[#7a9fad]">Use the range buttons to zoom in or out.</p>
+    </>
+  ),
+  assetAllocation: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Asset Allocation</p>
+      <p>Percentage breakdown of your total assets across major categories.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Category % = Category Value / Total Assets
+      </p>
+    </>
+  ),
+  topInsights: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Top Insights & Actions</p>
+      <p>AI-generated recommendations based on your current financial data, ranked by severity and potential impact.</p>
+    </>
+  ),
+}
+
+const SUB_SCORE_INFO: Record<string, React.ReactNode> = {
+  Liquidity: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Liquidity <span className="font-normal text-[#7a9fad]">(25%)</span></p>
+      <p>How quickly you can access your funds in an emergency.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Score = (Bank + Investments) / Net Worth × 100
+      </p>
+      <p className="mt-1.5 text-[#7a9fad]">Higher = more wealth in immediately accessible accounts.</p>
+    </>
+  ),
+  Diversification: (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Diversification <span className="font-normal text-[#7a9fad]">(25%)</span></p>
+      <p>How well your wealth is spread across different asset classes.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px]">
+        Score = 100 − (HHI / 100)<br />
+        HHI = Σ(each class % of net worth)²
+      </p>
+      <p className="mt-1.5 text-[#7a9fad]">Lower concentration → higher score.</p>
+    </>
+  ),
+  'Growth Potential': (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Growth Potential <span className="font-normal text-[#7a9fad]">(20%)</span></p>
+      <p>Expected return potential based on your asset mix.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px] leading-relaxed">
+        High growth (stocks, crypto) → 100 pts<br />
+        Medium (bonds, ETFs) → 60 pts<br />
+        Low (cash, bank) → 20 pts<br />
+        Score = weighted average by allocation
+      </p>
+    </>
+  ),
+  'Risk Resilience': (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Risk Resilience <span className="font-normal text-[#7a9fad]">(20%)</span></p>
+      <p>Ability to withstand financial shocks without selling long-term assets.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px] leading-relaxed">
+        Emergency ratio = min(1, Liquid / (6 × monthly expenses))<br />
+        Protection = 100 − volatile assets % × 0.5<br />
+        Score = Emergency ratio × Protection
+      </p>
+      <p className="mt-1.5 text-[#7a9fad]">Volatile = stocks + crypto. Target: 6 months liquid.</p>
+    </>
+  ),
+  'Concentration Risk': (
+    <>
+      <p className="mb-1 font-semibold text-[#0d1117]">Concentration Risk <span className="font-normal text-[#7a9fad]">(10%)</span></p>
+      <p>Starts at 100 and deducts points for dangerous over-concentration.</p>
+      <p className="mt-1.5 rounded bg-[#f0f8fa] px-2 py-1 font-mono text-[10px] leading-relaxed">
+        −20 if any sector &gt; 40% of net worth<br />
+        −10 if any sector &gt; 30% of net worth<br />
+        −15 if crypto &gt; 20% of net worth<br />
+        −10 if any single holding &gt; 15%
+      </p>
+    </>
+  ),
 }
 
 export function DashboardSection() {
@@ -74,6 +212,7 @@ export function DashboardSection() {
           note="YTD"
           color={COLORS.primary}
           Icon={DollarSign}
+          info={INFO.netWorth}
         />
         <StatCard
           label="Total Assets"
@@ -82,6 +221,7 @@ export function DashboardSection() {
           note="vs last yr"
           color={COLORS.mint}
           Icon={TrendingUp}
+          info={INFO.totalAssets}
         />
         <StatCard
           label="Total Liabilities"
@@ -90,6 +230,7 @@ export function DashboardSection() {
           note="vs last yr"
           color={COLORS.rose}
           Icon={CreditCard}
+          info={INFO.totalLiabilities}
         />
         <StatCard
           label="Wellness Score"
@@ -98,6 +239,7 @@ export function DashboardSection() {
           note="vs 6 mo"
           color={COLORS.purple}
           Icon={Activity}
+          info={INFO.wellnessScore}
         />
       </div>
 
@@ -105,8 +247,9 @@ export function DashboardSection() {
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-[#0d1117]">
-                Net Worth Trend
+              <div className="flex items-center gap-1.5">
+                <div className="text-sm font-semibold text-[#0d1117]">Net Worth Trend</div>
+                <InfoTooltip content={INFO.netWorthTrend} />
               </div>
               <div className="mt-0.5 text-[11px] text-[#7a9fad]">
                 12-month performance
@@ -171,8 +314,9 @@ export function DashboardSection() {
         </Card>
 
         <Card className="flex flex-col gap-3">
-          <div className="text-sm font-semibold text-[#0d1117]">
-            Wealth Wellness Score
+          <div className="flex items-center gap-1.5">
+            <div className="text-sm font-semibold text-[#0d1117]">Wealth Wellness Score</div>
+            <InfoTooltip content={INFO.wealthWellnessCard} />
           </div>
           <div className="flex justify-center">
             <ScoreGauge score={wellnessScore} size={148} />
@@ -180,11 +324,14 @@ export function DashboardSection() {
           <div className="flex flex-col gap-2">
             {subScores.map((s) => (
               <div key={s.name} className="flex items-center gap-2">
-                <span
-                  className="w-28 flex-shrink-0 text-[11px] font-medium text-[#3a5260]"
-                >
-                  {s.name}
-                </span>
+                <div className="flex w-28 flex-shrink-0 items-center gap-0.5">
+                  <span className="text-[11px] font-medium text-[#3a5260]">
+                    {s.name}
+                  </span>
+                  {SUB_SCORE_INFO[s.name] && (
+                    <InfoTooltip content={SUB_SCORE_INFO[s.name]} size={10} />
+                  )}
+                </div>
                 <div className="h-1.5 flex-1 overflow-hidden rounded bg-[#cae7ee]">
                   <div
                     className="h-full rounded"
@@ -205,8 +352,9 @@ export function DashboardSection() {
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[280px_1fr]">
         <Card>
-          <div className="mb-0.5 text-sm font-semibold text-[#0d1117]">
-            Asset Allocation
+          <div className="mb-0.5 flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-[#0d1117]">Asset Allocation</span>
+            <InfoTooltip content={INFO.assetAllocation} />
           </div>
           <div className="mb-2.5 text-[11px] text-[#7a9fad]">
             Total: {fmtK(stats.totalAssets)}
@@ -259,8 +407,9 @@ export function DashboardSection() {
 
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-semibold text-[#0d1117]">
-              Top Insights & Actions
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-[#0d1117]">Top Insights & Actions</span>
+              <InfoTooltip content={INFO.topInsights} />
             </div>
             <button
               type="button"
