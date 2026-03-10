@@ -200,8 +200,8 @@ export function DebtSection() {
               Debt-to-Asset Ratio
             </div>
             <div className="text-2xl font-bold text-[#d4860a]">
-              {dashboard?.stats.totalAssets > 0 && total > 0
-                ? ((total / dashboard.stats.totalAssets) * 100).toFixed(1)
+              {(dashboard?.stats.totalAssets ?? 0) > 0 && total > 0
+                ? ((total / (dashboard?.stats.totalAssets ?? 1)) * 100).toFixed(1)
                 : 0}%
             </div>
             <div className="mt-1 text-[11px] text-[#7a9fad]">
