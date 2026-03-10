@@ -2,7 +2,7 @@
 import sys
 import os
 
-# Add backend directory to Python path so imports resolve correctly
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
+backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend')
+sys.path.insert(0, backend_dir)
 
-from main import app  # noqa: E402, F401
+from main import app as app  # noqa: E402, F401
