@@ -162,6 +162,39 @@ export interface CryptoData {
   holdings: CryptoHolding[]
 }
 
+export const PRIVATE_ASSET_TYPES = ['Private Equity', 'Startups', 'Real Estate', 'Collectibles', 'Art'] as const
+export type PrivateAssetType = typeof PRIVATE_ASSET_TYPES[number]
+
+export interface ApiPrivateAsset {
+  id: string
+  name: string
+  assetType: PrivateAssetType
+  initialInvestment: number
+  currentValuation: number
+  exitTimeline: string
+  lastUpdated: string
+}
+
+export interface PrivateSummary {
+  totalValue: number
+  assetTypeMix: Record<string, number>
+  liquidity: string
+  volatility: string
+}
+
+export interface PrivateData {
+  summary: PrivateSummary
+  assets: ApiPrivateAsset[]
+}
+
+export interface PrivateAssetCreateInput {
+  name: string
+  assetType: PrivateAssetType
+  initialInvestment: number
+  currentValuation: number
+  exitTimeline: string
+}
+
 export interface SubScoreApi {
   name: string
   score: number
@@ -295,4 +328,8 @@ export const api = {
   chatWithAdvisor: (messages: ChatMessage[]) =>
     post<AdvisorChatResponse>('/advisor/chat', { messages }),
   getAdvisorStatus: () => get<{ available: boolean }>('/advisor/status'),
+  getPrivate: () => get<PrivateData>('/private'),
+  addPrivateAsset: (body: PrivateAssetCreateInput) => post<PrivateData>('/private', body),
+  updatePrivateAsset: (id: string, body: PrivateAssetCreateInput) => put<PrivateData>(`/private/${id}`, body),
+  deletePrivateAsset: (id: string) => del<PrivateData>(`/private/${id}`),
 }

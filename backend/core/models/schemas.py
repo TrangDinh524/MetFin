@@ -104,6 +104,40 @@ class CryptoResponse(BaseModel):
     holdings: List[CryptoHolding]
 
 
+# ── Private & Alternative Assets models ───────────────────────────
+PRIVATE_ASSET_TYPES = ["Private Equity", "Startups", "Real Estate", "Collectibles", "Art"]
+
+
+class PrivateAsset(BaseModel):
+    id: str
+    name: str
+    assetType: str
+    initialInvestment: float
+    currentValuation: float
+    exitTimeline: str
+    lastUpdated: str
+
+
+class PrivateSummary(BaseModel):
+    totalValue: float
+    assetTypeMix: Dict[str, float]
+    liquidity: str
+    volatility: str
+
+
+class PrivateResponse(BaseModel):
+    summary: PrivateSummary
+    assets: List[PrivateAsset]
+
+
+class PrivateAssetCreate(BaseModel):
+    name: str
+    assetType: str
+    initialInvestment: float
+    currentValuation: float
+    exitTimeline: str
+
+
 # ── Dashboard models ───────────────────────────────────────────────
 class NetWorthPoint(BaseModel):
     m: str

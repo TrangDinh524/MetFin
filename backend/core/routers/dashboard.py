@@ -26,18 +26,21 @@ def _load_all():
         crypto = json.load(f)
     with open(DATA_DIR / "debt.json") as f:
         debt = json.load(f)
-    return inv, bank, crypto, debt
+    with open(DATA_DIR / "private.json") as f:
+        private = json.load(f)
+    return inv, bank, crypto, debt, private
 
 
 @router.get("", response_model=DashboardResponse)
 def get_dashboard():
     """Return aggregated dashboard data: stats, net worth history, asset allocation, debt."""
-    inv, bank, crypto, debt = _load_all()
+    inv, bank, crypto, debt, private = _load_all()
 
     inv_total = inv["summary"]["totalValue"]
     bank_total = bank["summary"]["totalBalance"]
     crypto_total = crypto["summary"]["totalValue"]
-    total_assets = inv_total + bank_total + crypto_total
+    private_total = private["summary"]["totalValue"]
+    total_assets = inv_total + bank_total + crypto_total + private_total
 
     # Debt items loaded from debt.json
     debt_items = debt["items"]
@@ -45,10 +48,14 @@ def get_dashboard():
     net_worth = total_assets - total_debt
 
     # Asset allocation for pie chart
+    def _pct(val):
+        return round(val / total_assets * 100) if total_assets else 0
+
     asset_alloc = [
-        {"name": "Public Investments", "pct": round(inv_total / total_assets * 100), "amt": inv_total, "color": COLORS["primary"]},
-        {"name": "Digital Assets", "pct": round(crypto_total / total_assets * 100), "amt": crypto_total, "color": COLORS["amber"]},
-        {"name": "Bank Deposits", "pct": round(bank_total / total_assets * 100), "amt": bank_total, "color": COLORS["rose"]},
+        {"name": "Public Investments", "pct": _pct(inv_total), "amt": inv_total, "color": COLORS["primary"]},
+        {"name": "Private & Alt", "pct": _pct(private_total), "amt": private_total, "color": COLORS["purple"]},
+        {"name": "Digital Assets", "pct": _pct(crypto_total), "amt": crypto_total, "color": COLORS["amber"]},
+        {"name": "Bank Deposits", "pct": _pct(bank_total), "amt": bank_total, "color": COLORS["rose"]},
     ]
 
     # Net worth history (simulated 12-month trend)

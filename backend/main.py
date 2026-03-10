@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from core.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios, auth, debt, advisor
+from core.routers import investments, banking, crypto, dashboard, wellness, insights, scenarios, auth, debt, advisor, private
 
 app = FastAPI(
     title="MetFin API",
@@ -32,6 +32,7 @@ app.include_router(dashboard.router)
 app.include_router(investments.router)
 app.include_router(banking.router)
 app.include_router(crypto.router)
+app.include_router(private.router)
 app.include_router(debt.router)
 app.include_router(wellness.router)
 app.include_router(insights.router)

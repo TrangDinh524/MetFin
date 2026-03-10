@@ -7,6 +7,8 @@ import {
   type InvestmentData,
   type BankingData,
   type CryptoData,
+  type PrivateData,
+  type PrivateAssetCreateInput,
   type WellnessData,
   type InsightsData,
   type ScenarioListData,
@@ -39,6 +41,7 @@ interface FinanceState {
   investments: InvestmentData | null
   banking: BankingData | null
   crypto: CryptoData | null
+  privateAssets: PrivateData | null
   wellness: WellnessData | null
   insights: InsightsData | null
   scenarioList: ScenarioListData | null
@@ -62,6 +65,10 @@ interface FinanceState {
   deleteDebt: (id: string) => Promise<void>
   fetchBanking: () => Promise<void>
   fetchCrypto: () => Promise<void>
+  fetchPrivateAssets: () => Promise<void>
+  addPrivateAsset: (body: PrivateAssetCreateInput) => Promise<void>
+  updatePrivateAsset: (id: string, body: PrivateAssetCreateInput) => Promise<void>
+  deletePrivateAsset: (id: string) => Promise<void>
   fetchWellness: () => Promise<void>
   fetchInsights: () => Promise<void>
   fetchScenarios: () => Promise<void>
@@ -133,6 +140,7 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   investments: null,
   banking: null,
   crypto: null,
+  privateAssets: null,
   wellness: null,
   insights: null,
   scenarioList: null,
@@ -263,6 +271,42 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       const data = await api.getCrypto()
       set({ crypto: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  fetchPrivateAssets: async () => {
+    set({ loading: true })
+    try {
+      const data = await api.getPrivate()
+      set({ privateAssets: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  addPrivateAsset: async (body) => {
+    set({ loading: true })
+    try {
+      const data = await api.addPrivateAsset(body)
+      set({ privateAssets: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  updatePrivateAsset: async (id, body) => {
+    set({ loading: true })
+    try {
+      const data = await api.updatePrivateAsset(id, body)
+      set({ privateAssets: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  deletePrivateAsset: async (id) => {
+    set({ loading: true })
+    try {
+      const data = await api.deletePrivateAsset(id)
+      set({ privateAssets: data })
     } finally {
       set({ loading: false })
     }
