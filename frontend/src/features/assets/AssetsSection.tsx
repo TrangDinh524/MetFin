@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wallet, Key, Link2 } from 'lucide-react'
+import { TrendingUp, ArrowUpRight, Activity, Plus, X, Pencil, Trash2, Coins, Wallet, Key, Link2, Landmark, ShieldCheck, Percent, Upload, FileText } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 import type { SectorItem } from '../../types'
-import type { HoldingCreateInput } from '../../lib/api'
+import type { HoldingCreateInput, BankAccount } from '../../lib/api'
 import { useFinanceStore } from '../../store/useFinanceStore'
 
 export function AssetsSection() {
@@ -35,6 +35,19 @@ export function AssetsSection() {
   const [form, setForm] = useState<HoldingCreateInput>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+
+  // Bank account edit/add state
+  const [bankEditMode, setBankEditMode] = useState(false)
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false)
+  const [addAccountTab, setAddAccountTab] = useState<'manual' | 'upload'>('manual')
+  type BankFormState = { bankName: string; accountType: string; balance: string; apy: string; monthlyAvgBalance: string; maturityDate: string }
+  const emptyBankForm = (): BankFormState => ({ bankName: '', accountType: 'Checking', balance: '', apy: '', monthlyAvgBalance: '', maturityDate: '' })
+  const [bankForm, setBankForm] = useState<BankFormState>(emptyBankForm)
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+  const [bankConfirmDeleteId, setBankConfirmDeleteId] = useState<string | null>(null)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadParsed, setUploadParsed] = useState<string | null>(null)
 
   // Coinbase API connection state
   const [showCoinbaseModal, setShowCoinbaseModal] = useState(false)
@@ -566,6 +579,289 @@ export function AssetsSection() {
             </div>
           </div>
         </>
+      ) : active === 'bank' ? (
+        <>
+          {/* ── Bank Deposits stat cards ── */}
+          {(() => {
+            const accounts = banking?.accounts ?? []
+            const totalBalance = banking?.summary.totalBalance ?? 0
+            const fdicCovered = banking?.summary.fdicCovered ?? 0
+            const fdicCoveredPct = banking?.summary.fdicCoveredPct ?? 100
+            const apyValues = accounts.map((a) => a.apy).filter((v) => v > 0)
+            const highestApy = apyValues.length > 0 ? Math.max(...apyValues) : 0
+            const accountTypeMix: SectorItem[] = banking
+              ? Object.entries(banking.summary.accountTypeMix).map(([n, v], i) => ({
+                  n,
+                  v,
+                  c: [COLORS.primary, COLORS.mint, COLORS.purple, COLORS.amber][i % 4],
+                }))
+              : []
+
+            const typeColors: Record<string, string> = {
+              Checking: COLORS.primary,
+              Savings: COLORS.mint,
+              CD: COLORS.purple,
+              MoneyMarket: COLORS.amber,
+            }
+
+            return (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <StatCard
+                    label="Total Deposits"
+                    value={fmtK(totalBalance)}
+                    change={0}
+                    note="across all accounts"
+                    color={COLORS.primary}
+                    Icon={Landmark}
+                  />
+                  <StatCard
+                    label="FDIC Coverage"
+                    value={fmtK(fdicCovered)}
+                    change={fdicCoveredPct}
+                    note={`${fdicCoveredPct}% insured`}
+                    color={COLORS.mint}
+                    Icon={ShieldCheck}
+                  />
+                  <StatCard
+                    label="Best APY"
+                    value={`${highestApy}%`}
+                    change={highestApy}
+                    note="highest rate"
+                    color={COLORS.purple}
+                    Icon={Percent}
+                  />
+                </div>
+
+                {/* ── Accounts table + type mix ── */}
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_252px]">
+                  <Card>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="text-sm font-semibold text-[#0d1117]">Accounts</div>
+                      <div className="flex items-center gap-2">
+                        {accounts.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => { setBankEditMode((v) => !v); setBankConfirmDeleteId(null) }}
+                            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                            style={{
+                              borderColor: bankEditMode ? COLORS.primary : COLORS.border,
+                              color: bankEditMode ? COLORS.primary : COLORS.textDim,
+                              background: bankEditMode ? `${COLORS.primary}10` : 'transparent',
+                            }}
+                          >
+                            <Pencil size={12} />
+                            Edit Accounts
+                          </button>
+                        )}
+                        <AddButton
+                          label="Add Account"
+                          color={COLORS.primary}
+                          onClick={() => { setBankForm(emptyBankForm()); setUploadFile(null); setUploadError(null); setUploadParsed(null); setAddAccountTab('manual'); setShowAddAccountModal(true) }}
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-[#cae7ee]">
+                            {['Institution', 'Type', 'Balance', 'APY', 'Avg Monthly', 'FDIC Insured', 'Matures', ...(bankEditMode ? [''] : [])].map((h) => (
+                              <th
+                                key={h}
+                                className="px-2.5 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-[#7a9fad]"
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {accounts.map((a) => {
+                            const isConfirming = bankConfirmDeleteId === a.id
+                            return (
+                              <tr
+                                key={a.id}
+                                className="border-b border-[#cae7ee]/30 transition-colors hover:bg-[#f0f8fa]"
+                                style={isConfirming ? { background: `${COLORS.rose}06` } : {}}
+                              >
+                                <td className="px-2.5 py-2.5 text-[13px] font-medium text-[#0d1117]">
+                                  {a.bankName}
+                                </td>
+                                <td className="px-2.5 py-2.5">
+                                  <span
+                                    className="rounded-md border px-2 py-0.5 text-[11px] font-semibold"
+                                    style={{
+                                      borderColor: `${typeColors[a.accountType] ?? COLORS.primary}40`,
+                                      background: `${typeColors[a.accountType] ?? COLORS.primary}12`,
+                                      color: typeColors[a.accountType] ?? COLORS.primary,
+                                    }}
+                                  >
+                                    {a.accountType}
+                                  </span>
+                                </td>
+                                <td className="px-2.5 py-2.5 text-[13px] font-semibold text-[#0d1117]">
+                                  {fmt(a.balance)}
+                                </td>
+                                <td className="px-2.5 py-2.5">
+                                  <span
+                                    className="text-[12px] font-bold"
+                                    style={{ color: a.apy >= 4 ? COLORS.mint : a.apy > 0.5 ? COLORS.primary : COLORS.textDim }}
+                                  >
+                                    {a.apy}%
+                                  </span>
+                                </td>
+                                <td className="px-2.5 py-2.5 text-[12px] text-[#3a5260]">
+                                  {fmt(a.monthlyAvgBalance)}
+                                </td>
+                                <td className="px-2.5 py-2.5">
+                                  {a.fdicInsured === a.balance ? (
+                                    <span
+                                      className="flex items-center gap-1 text-[11px] font-semibold"
+                                      style={{ color: COLORS.mint }}
+                                    >
+                                      <ShieldCheck size={11} />
+                                      {fmt(a.fdicInsured)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-[#3a5260]">{fmt(a.fdicInsured)}</span>
+                                  )}
+                                </td>
+                                <td className="px-2.5 py-2.5 text-[11px] text-[#7a9fad]">
+                                  {a.maturityDate ?? '—'}
+                                </td>
+                                {bankEditMode && (
+                                  <td className="px-2.5 py-2.5">
+                                    {isConfirming ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] text-[#7a9fad]">Delete?</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setBankConfirmDeleteId(null)}
+                                          className="rounded-lg px-2 py-0.5 text-[11px] font-semibold"
+                                          style={{ color: COLORS.rose, border: `1px solid ${COLORS.rose}40` }}
+                                        >
+                                          Yes
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setBankConfirmDeleteId(null)}
+                                          className="rounded-lg border px-2 py-0.5 text-[11px] font-semibold"
+                                          style={{ borderColor: COLORS.border, color: COLORS.textDim }}
+                                        >
+                                          No
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingAccount(a)
+                                            setBankForm({
+                                              bankName: a.bankName,
+                                              accountType: a.accountType,
+                                              balance: String(a.balance),
+                                              apy: String(a.apy),
+                                              monthlyAvgBalance: String(a.monthlyAvgBalance),
+                                              maturityDate: a.maturityDate ?? '',
+                                            })
+                                          }}
+                                          className="rounded-lg p-1.5 transition-colors hover:bg-[#cae7ee]/50"
+                                          style={{ color: COLORS.primary }}
+                                          title="Edit"
+                                        >
+                                          <Pencil size={12} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setBankConfirmDeleteId(a.id)}
+                                          className="rounded-lg p-1.5 transition-colors hover:bg-[#fdecea]"
+                                          style={{ color: COLORS.rose }}
+                                          title="Delete"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                )}
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+
+                  {/* Right panel */}
+                  <div className="flex flex-col gap-3">
+                    <Card className="flex flex-col gap-3">
+                      <div className="text-sm font-semibold text-[#0d1117]">Account Mix</div>
+                      <PieChart width={196} height={148}>
+                        <Pie
+                          data={accountTypeMix}
+                          cx={98}
+                          cy={68}
+                          innerRadius={38}
+                          outerRadius={62}
+                          dataKey="v"
+                          paddingAngle={3}
+                        >
+                          {accountTypeMix.map((s, i) => (
+                            <Cell key={i} fill={s.c} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                      <div className="flex flex-col gap-2">
+                        {accountTypeMix.map((s, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-2 w-2 rounded-sm" style={{ background: s.c }} />
+                              <span className="text-[11px] text-[#3a5260]">{s.n}</span>
+                            </div>
+                            <span className="text-[11px] font-semibold text-[#0d1117]">{s.v}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    {/* FDIC summary card */}
+                    <Card className="flex flex-col gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                          style={{ background: `${COLORS.mint}18` }}
+                        >
+                          <ShieldCheck size={14} style={{ color: COLORS.mint }} />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-semibold text-[#0d1117]">FDIC Protection</div>
+                          <div className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                            Up to $250k per bank
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: `${COLORS.mint}10` }}>
+                        <span className="text-[11px] text-[#3a5260]">Covered</span>
+                        <span className="text-[12px] font-bold" style={{ color: COLORS.mint }}>
+                          {fdicCoveredPct}%
+                        </span>
+                      </div>
+                      {(banking?.summary.fdicExposed ?? 0) > 0 && (
+                        <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: `${COLORS.rose}10` }}>
+                          <span className="text-[11px] text-[#3a5260]">Uninsured</span>
+                          <span className="text-[12px] font-bold" style={{ color: COLORS.rose }}>
+                            {fmt(banking!.summary.fdicExposed)}
+                          </span>
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </>
       ) : (
         <Card className="flex flex-col items-center gap-3 p-14">
           <div
@@ -910,6 +1206,408 @@ export function AssetsSection() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Account Modal ── */}
+      {showAddAccountModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setShowAddAccountModal(false)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowAddAccountModal(false)}
+              className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40"
+            >
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+
+            <div className="mb-4">
+              <div className="text-base font-semibold text-[#0d1117]">Add Account</div>
+              <div className="mt-0.5 text-[11px] text-[#7a9fad]">Add a bank deposit account manually or import from a document</div>
+            </div>
+
+            {/* Tab switcher */}
+            <div className="mb-5 flex gap-1 rounded-xl p-1" style={{ background: '#f0f8fa' }}>
+              {(['manual', 'upload'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setAddAccountTab(tab)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-semibold transition-all"
+                  style={{
+                    background: addAccountTab === tab ? '#fff' : 'transparent',
+                    color: addAccountTab === tab ? COLORS.primary : COLORS.textDim,
+                    boxShadow: addAccountTab === tab ? '0 1px 4px rgba(85,178,201,0.15)' : 'none',
+                  }}
+                >
+                  {tab === 'manual' ? <Pencil size={12} /> : <Upload size={12} />}
+                  {tab === 'manual' ? 'Manual Entry' : 'Upload Document'}
+                </button>
+              ))}
+            </div>
+
+            {addAccountTab === 'manual' ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  // In a real app this would POST to the backend; for now just close
+                  setShowAddAccountModal(false)
+                }}
+                className="flex flex-col gap-3.5"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Institution Name</label>
+                    <input
+                      required
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="e.g. Chase Bank"
+                      value={bankForm.bankName}
+                      onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Account Type</label>
+                    <select
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      value={bankForm.accountType}
+                      onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value })}
+                    >
+                      {['Checking', 'Savings', 'CD', 'MoneyMarket'].map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Balance ($)</label>
+                    <input
+                      required
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="0.00"
+                      value={bankForm.balance}
+                      onChange={(e) => setBankForm({ ...bankForm, balance: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">APY (%)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="e.g. 4.25"
+                      value={bankForm.apy}
+                      onChange={(e) => setBankForm({ ...bankForm, apy: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Avg Monthly Balance ($)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="0.00"
+                      value={bankForm.monthlyAvgBalance}
+                      onChange={(e) => setBankForm({ ...bankForm, monthlyAvgBalance: e.target.value })}
+                    />
+                  </div>
+                  {(bankForm.accountType === 'CD') && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Maturity Date</label>
+                      <input
+                        type="date"
+                        className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                        style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                        value={bankForm.maturityDate}
+                        onChange={(e) => setBankForm({ ...bankForm, maturityDate: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAccountModal(false)}
+                    className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(85,178,201,0.28)]"
+                    style={{ background: COLORS.primary }}
+                  >
+                    Add Account
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div
+                  className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 transition-colors"
+                  style={{ borderColor: uploadFile ? COLORS.mint : COLORS.border, background: uploadFile ? `${COLORS.mint}08` : '#f7fcfd' }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const file = e.dataTransfer.files[0]
+                    if (file) {
+                      if (!['application/pdf', 'text/csv', 'image/png', 'image/jpeg'].includes(file.type)) {
+                        setUploadError('Unsupported file type. Please upload a PDF, CSV, PNG, or JPG.')
+                      } else {
+                        setUploadError(null)
+                        setUploadFile(file)
+                        setUploadParsed(`Detected: ${file.name} (${(file.size / 1024).toFixed(1)} KB) — ready to parse`)
+                      }
+                    }
+                  }}
+                >
+                  {uploadFile ? (
+                    <>
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full"
+                        style={{ background: `${COLORS.mint}18` }}
+                      >
+                        <FileText size={22} style={{ color: COLORS.mint }} />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[13px] font-semibold text-[#0d1117]">{uploadFile.name}</div>
+                        <div className="text-[11px]" style={{ color: COLORS.textMuted }}>
+                          {(uploadFile.size / 1024).toFixed(1)} KB
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setUploadFile(null); setUploadParsed(null); setUploadError(null) }}
+                        className="text-[11px] font-semibold underline"
+                        style={{ color: COLORS.rose }}
+                      >
+                        Remove
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full"
+                        style={{ background: `${COLORS.primary}12` }}
+                      >
+                        <Upload size={22} style={{ color: COLORS.primary }} />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[13px] font-semibold text-[#0d1117]">Drop your statement here</div>
+                        <div className="mt-0.5 text-[11px]" style={{ color: COLORS.textMuted }}>
+                          PDF, CSV, PNG, or JPG · up to 10 MB
+                        </div>
+                      </div>
+                      <label
+                        className="cursor-pointer rounded-lg border px-4 py-1.5 text-[12px] font-semibold transition-colors hover:bg-[#f0f8fa]"
+                        style={{ borderColor: COLORS.border, color: COLORS.primary }}
+                      >
+                        Browse files
+                        <input
+                          type="file"
+                          accept=".pdf,.csv,.png,.jpg,.jpeg"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setUploadError(null)
+                              setUploadFile(file)
+                              setUploadParsed(`Detected: ${file.name} (${(file.size / 1024).toFixed(1)} KB) — ready to parse`)
+                            }
+                          }}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                {uploadError && (
+                  <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+                    {uploadError}
+                  </div>
+                )}
+                {uploadParsed && !uploadError && (
+                  <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: `${COLORS.mint}10`, color: COLORS.mint, border: `1px solid ${COLORS.mint}30` }}>
+                    {uploadParsed}
+                  </div>
+                )}
+
+                <div className="text-[11px]" style={{ color: COLORS.textMuted }}>
+                  Supported: bank statements (PDF), exported transactions (CSV), or screenshots (PNG/JPG). MetFin will auto-extract institution, account type, and balance.
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAccountModal(false)}
+                    className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!uploadFile}
+                    className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(85,178,201,0.28)] disabled:opacity-40"
+                    style={{ background: COLORS.primary }}
+                    onClick={() => setShowAddAccountModal(false)}
+                  >
+                    Import Account
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Account Modal ── */}
+      {editingAccount && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(13,17,23,0.45)' }}
+          onClick={() => setEditingAccount(null)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-2xl p-6 shadow-2xl"
+            style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setEditingAccount(null)}
+              className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-[#cae7ee]/40"
+            >
+              <X size={16} style={{ color: COLORS.textDim }} />
+            </button>
+            <div className="mb-5">
+              <div className="text-base font-semibold text-[#0d1117]">Edit Account</div>
+              <div className="mt-0.5 text-[11px] text-[#7a9fad]">{editingAccount.bankName}</div>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                // In a real app this would PATCH to the backend; for now just close
+                setEditingAccount(null)
+              }}
+              className="flex flex-col gap-3.5"
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Institution Name</label>
+                  <input
+                    required
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={bankForm.bankName}
+                    onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Account Type</label>
+                  <select
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={bankForm.accountType}
+                    onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value })}
+                  >
+                    {['Checking', 'Savings', 'CD', 'MoneyMarket'].map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Balance ($)</label>
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={bankForm.balance}
+                    onChange={(e) => setBankForm({ ...bankForm, balance: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">APY (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={bankForm.apy}
+                    onChange={(e) => setBankForm({ ...bankForm, apy: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Avg Monthly Balance ($)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                    style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                    value={bankForm.monthlyAvgBalance}
+                    onChange={(e) => setBankForm({ ...bankForm, monthlyAvgBalance: e.target.value })}
+                  />
+                </div>
+                {bankForm.accountType === 'CD' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Maturity Date</label>
+                    <input
+                      type="date"
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      value={bankForm.maturityDate}
+                      onChange={(e) => setBankForm({ ...bankForm, maturityDate: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setBankConfirmDeleteId(editingAccount.id); setEditingAccount(null) }}
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-[#fdecea]"
+                  style={{ borderColor: `${COLORS.rose}40`, color: COLORS.rose }}
+                >
+                  <Trash2 size={13} />
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingAccount(null)}
+                  className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                  style={{ borderColor: COLORS.border }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(85,178,201,0.28)]"
+                  style={{ background: COLORS.primary }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

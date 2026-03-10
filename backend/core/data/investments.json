@@ -1,10 +1,10 @@
 {
   "summary": {
-    "totalValue": 242819,
+    "totalValue": 204207,
     "todayGain": 1247,
     "todayGainPct": 0.32,
-    "allTimeGain": 23277,
-    "allTimeGainPct": 10.6,
+    "allTimeGain": 19021,
+    "allTimeGainPct": 10.27,
     "liquidity": "Immediate",
     "volatility": "High",
     "allocation": {
@@ -18,26 +18,13 @@
       "International": 18
     },
     "sectors": {
-      "Tech": 70.0,
-      "ETF": 17.0,
-      "Bonds": 8.0,
-      "Cash": 5.0
+      "ETF": 30.8,
+      "Tech": 45.1,
+      "Bonds": 10.7,
+      "Cash": 13.4
     }
   },
   "holdings": [
-    {
-      "id": "h1",
-      "name": "Apple Inc.",
-      "ticker": "AAPL",
-      "shares": 145,
-      "currentPrice": 266.29,
-      "value": 38612,
-      "costBasis": 34356,
-      "gain": 4256,
-      "gainPct": 12.4,
-      "sector": "Tech",
-      "lastUpdated": "2026-03-10T16:00:00Z"
-    },
     {
       "id": "h2",
       "name": "Vanguard S&P 500",
