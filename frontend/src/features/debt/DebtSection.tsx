@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
-import { CreditCard, Activity, TrendingDown, Plus, X, Upload, FileText, CheckCircle2 } from 'lucide-react'
+import { CreditCard, Activity, TrendingDown, Plus, X, Upload, FileText, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { AddButton } from '../../components/ui/AddButton'
 import { useFinanceStore } from '../../store/useFinanceStore'
+import { api, type ApiDebtItemWithId } from '../../lib/api'
 import { fmt, fmtK, COLORS } from '../../lib/utils'
 
 const debtColors = [COLORS.primary, COLORS.purple, COLORS.rose, COLORS.rose, COLORS.mint]
 
 const DEBT_TYPES = ['Mortgage', 'Credit Card', 'Personal Loan', 'Student Loan', 'Auto Loan', 'Other']
 
-type ModalStep = 'pick' | 'manual' | 'upload'
+type ModalStep = 'pick' | 'manual' | 'upload' | 'edit'
 
 interface DebtForm {
   name: string
@@ -27,9 +28,25 @@ export function DebtSection() {
   const dashboard = useFinanceStore((s) => s.dashboard)
   const fetchDashboard = useFinanceStore((s) => s.fetchDashboard)
   const addDebt = useFinanceStore((s) => s.addDebt)
+  const updateDebt = useFinanceStore((s) => s.updateDebt)
+  const deleteDebt = useFinanceStore((s) => s.deleteDebt)
+
+  const [debtList, setDebtList] = useState<ApiDebtItemWithId[]>([])
+  const [editMode, setEditMode] = useState(false)
+  const [editingDebt, setEditingDebt] = useState<ApiDebtItemWithId | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function fetchDebtList() {
+    try {
+      const data = await api.getDebt()
+      setDebtList(data.items)
+    } catch {}
+  }
 
   useEffect(() => {
     if (!dashboard) fetchDashboard()
+    fetchDebtList()
   }, [dashboard, fetchDashboard])
 
   const [modalStep, setModalStep] = useState<ModalStep | null>(null)
@@ -42,7 +59,14 @@ export function DebtSection() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function openModal() { setModalStep('pick'); setForm(emptyForm()); setUploadedFile(null); setUploadParsed(false); setSubmitError(null) }
-  function closeModal() { setModalStep(null) }
+  function closeModal() { setModalStep(null); setEditingDebt(null); setConfirmDeleteId(null) }
+
+  function openEditModal(item: ApiDebtItemWithId) {
+    setEditingDebt(item)
+    setForm({ name: item.name, type: item.type, balance: item.balance, monthly: item.monthly, rate: item.rate })
+    setSubmitError(null)
+    setModalStep('edit')
+  }
 
   function handleFile(file: File) {
     setUploadedFile(file)
@@ -101,7 +125,24 @@ export function DebtSection() {
             <div className="text-sm font-semibold text-[#0d1117]">
               Debt Accounts
             </div>
-            <AddButton label="Add Debt" color={COLORS.rose} onClick={openModal} />
+            <div className="flex items-center gap-2">
+              {!isEmpty && (
+                <button
+                  type="button"
+                  onClick={() => { setEditMode((v) => !v); setConfirmDeleteId(null) }}
+                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                  style={{
+                    borderColor: editMode ? COLORS.rose : COLORS.border,
+                    color: editMode ? COLORS.rose : COLORS.textDim,
+                    background: editMode ? `${COLORS.rose}10` : 'transparent',
+                  }}
+                >
+                  <Pencil size={12} />
+                  Edit Debt
+                </button>
+              )}
+              <AddButton label="Add Debt" color={COLORS.rose} onClick={openModal} />
+            </div>
           </div>
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center gap-3 py-12">
@@ -134,10 +175,13 @@ export function DebtSection() {
               {debtItems.map((d, i) => {
                 const rc =
                   d.rate > 15 ? COLORS.rose : d.rate > 8 ? COLORS.amber : COLORS.primary
+                const itemWithId = debtList[i]
+                const isConfirming = confirmDeleteId === itemWithId?.id
                 return (
                   <div
                     key={i}
                     className="flex items-center gap-3 rounded-xl border border-[#cae7ee] bg-[#f0f8fa] px-4 py-3"
+                    style={isConfirming ? { borderColor: `${COLORS.rose}60`, background: `${COLORS.rose}06` } : {}}
                   >
                     <div
                       className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[rgba(0,0,0,0.13)]"
@@ -153,25 +197,76 @@ export function DebtSection() {
                         {d.type}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[13px] font-bold text-[#0d1117]">
-                        {fmt(d.balance)}
+                    {!editMode ? (
+                      <>
+                        <div className="text-right">
+                          <div className="text-[13px] font-bold text-[#0d1117]">
+                            {fmt(d.balance)}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-[#7a9fad]">
+                            {fmt(d.monthly)}/mo
+                          </div>
+                        </div>
+                        <div
+                          className="flex-shrink-0 rounded-lg border px-2.5 py-1"
+                          style={{ background: `${rc}12`, borderColor: `${rc}22` }}
+                        >
+                          <span className="text-[12px] font-bold" style={{ color: rc }}>
+                            {d.rate}%
+                          </span>
+                        </div>
+                      </>
+                    ) : isConfirming ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-[#7a9fad]">Delete?</span>
+                        <button
+                          type="button"
+                          disabled={deleting}
+                          onClick={async () => {
+                            if (!itemWithId) return
+                            setDeleting(true)
+                            try {
+                              await deleteDebt(itemWithId.id)
+                              await fetchDebtList()
+                              setConfirmDeleteId(null)
+                            } finally { setDeleting(false) }
+                          }}
+                          className="rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white disabled:opacity-60"
+                          style={{ background: COLORS.rose }}
+                        >
+                          {deleting ? '…' : 'Yes'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
+                          style={{ borderColor: COLORS.border, color: COLORS.textDim }}
+                        >
+                          No
+                        </button>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-[#7a9fad]">
-                        {fmt(d.monthly)}/mo
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => itemWithId && openEditModal(itemWithId)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border transition-colors hover:bg-[#e4f2f5]"
+                          style={{ borderColor: COLORS.border }}
+                          title="Edit"
+                        >
+                          <Pencil size={13} style={{ color: COLORS.primary }} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(itemWithId?.id ?? null)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border transition-colors hover:bg-[#fdecea]"
+                          style={{ borderColor: COLORS.border }}
+                          title="Delete"
+                        >
+                          <Trash2 size={13} style={{ color: COLORS.rose }} />
+                        </button>
                       </div>
-                    </div>
-                    <div
-                      className="flex-shrink-0 rounded-lg border px-2.5 py-1"
-                      style={{
-                        background: `${rc}12`,
-                        borderColor: `${rc}22`,
-                      }}
-                    >
-                      <span className="text-[12px] font-bold" style={{ color: rc }}>
-                        {d.rate}%
-                      </span>
-                    </div>
+                    )}
                   </div>
                 )
               })}
@@ -596,6 +691,145 @@ export function DebtSection() {
                 )}
               </>
             )}
+            {/* ── Step 3: Edit Debt ── */}
+            {modalStep === 'edit' && editingDebt && (
+              <>
+                <div className="mb-5">
+                  <div className="text-base font-semibold text-[#0d1117]">Edit Debt</div>
+                  <div className="mt-0.5 text-[11px] text-[#7a9fad]">Update your debt account details</div>
+                </div>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    setSubmitting(true)
+                    setSubmitError(null)
+                    try {
+                      await updateDebt(editingDebt.id, form)
+                      await fetchDebtList()
+                      closeModal()
+                    } catch (err) {
+                      setSubmitError(err instanceof Error ? err.message : 'Failed to save. Is the backend running?')
+                    } finally {
+                      setSubmitting(false)
+                    }
+                  }}
+                  className="flex flex-col gap-3.5"
+                >
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Account Name</label>
+                    <input
+                      required
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none focus:border-[#55b2c9]"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="e.g. Chase Sapphire Card"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Debt Type</label>
+                    <select
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none focus:border-[#55b2c9]"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      value={form.type}
+                      onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    >
+                      {DEBT_TYPES.map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Balance ($)</label>
+                      <input
+                        required
+                        type="number"
+                        min={0}
+                        step="any"
+                        className="rounded-lg border px-3 py-2 text-[13px] outline-none focus:border-[#55b2c9]"
+                        style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                        placeholder="0.00"
+                        value={form.balance || ''}
+                        onChange={(e) => setForm({ ...form, balance: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Monthly ($)</label>
+                      <input
+                        required
+                        type="number"
+                        min={0}
+                        step="any"
+                        className="rounded-lg border px-3 py-2 text-[13px] outline-none focus:border-[#55b2c9]"
+                        style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                        placeholder="0.00"
+                        value={form.monthly || ''}
+                        onChange={(e) => setForm({ ...form, monthly: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-[#7a9fad]">Interest Rate (%)</label>
+                    <input
+                      required
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      className="rounded-lg border px-3 py-2 text-[13px] outline-none focus:border-[#55b2c9]"
+                      style={{ borderColor: COLORS.border, background: '#f7fcfd', color: '#0d1117' }}
+                      placeholder="e.g. 19.99"
+                      value={form.rate || ''}
+                      onChange={(e) => setForm({ ...form, rate: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  {submitError && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-[12px]"
+                      style={{ background: '#fdecea', color: '#b91c1c', border: '1px solid #fca5a5' }}
+                    >
+                      {submitError}
+                    </div>
+                  )}
+                  <div className="mt-1 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!editingDebt) return
+                        setDeleting(true)
+                        try {
+                          await deleteDebt(editingDebt.id)
+                          await fetchDebtList()
+                          closeModal()
+                        } finally { setDeleting(false) }
+                      }}
+                      disabled={deleting || submitting}
+                      className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-[#fdecea] disabled:opacity-60"
+                      style={{ borderColor: `${COLORS.rose}40`, color: COLORS.rose }}
+                    >
+                      <Trash2 size={13} />
+                      {deleting ? 'Deleting…' : 'Delete'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="flex-1 rounded-lg border px-4 py-2 text-[13px] font-semibold text-[#0d1117] transition-colors hover:bg-[#f0f8fa]"
+                      style={{ borderColor: COLORS.border }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 rounded-lg px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60"
+                      style={{ background: COLORS.rose }}
+                    >
+                      {submitting ? 'Saving…' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+
           </div>
         </div>
       )}

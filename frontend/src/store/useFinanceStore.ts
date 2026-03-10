@@ -49,6 +49,8 @@ interface FinanceState {
   fetchInvestments: () => Promise<void>
   addHolding: (body: HoldingCreateInput) => Promise<void>
   addDebt: (body: DebtCreateInput) => Promise<void>
+  updateDebt: (id: string, body: DebtCreateInput) => Promise<void>
+  deleteDebt: (id: string) => Promise<void>
   fetchBanking: () => Promise<void>
   fetchCrypto: () => Promise<void>
   fetchWellness: () => Promise<void>
@@ -160,6 +162,26 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     try {
       await api.addDebt(body)
       // Refresh dashboard so debtItems and stats update
+      const data = await api.getDashboard()
+      set({ dashboard: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  updateDebt: async (id, body) => {
+    set({ loading: true })
+    try {
+      await api.updateDebt(id, body)
+      const data = await api.getDashboard()
+      set({ dashboard: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  deleteDebt: async (id) => {
+    set({ loading: true })
+    try {
+      await api.deleteDebt(id)
       const data = await api.getDashboard()
       set({ dashboard: data })
     } finally {

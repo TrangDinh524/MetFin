@@ -21,6 +21,21 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function put<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'PUT',
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  })
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
+  return res.json() as Promise<T>
+}
+
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
+  return res.json() as Promise<T>
+}
+
 // ── Response types matching backend schemas ───────────────────────
 
 export interface DashboardStats {
@@ -258,6 +273,8 @@ export const api = {
   addHolding: (body: HoldingCreateInput) => post<InvestmentData>('/investments', body),
   getDebt: () => get<DebtListData>('/debt'),
   addDebt: (body: DebtCreateInput) => post<DebtListData>('/debt', body),
+  updateDebt: (id: string, body: DebtCreateInput) => put<DebtListData>(`/debt/${id}`, body),
+  deleteDebt: (id: string) => del<DebtListData>(`/debt/${id}`),
   getBanking: () => get<BankingData>('/banking'),
   getCrypto: () => get<CryptoData>('/crypto'),
   getWellness: () => get<WellnessData>('/wellness'),
