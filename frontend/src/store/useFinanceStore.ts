@@ -48,6 +48,8 @@ interface FinanceState {
   fetchDashboard: () => Promise<void>
   fetchInvestments: () => Promise<void>
   addHolding: (body: HoldingCreateInput) => Promise<void>
+  updateHolding: (id: string, body: HoldingCreateInput) => Promise<void>
+  deleteHolding: (id: string) => Promise<void>
   addDebt: (body: DebtCreateInput) => Promise<void>
   updateDebt: (id: string, body: DebtCreateInput) => Promise<void>
   deleteDebt: (id: string) => Promise<void>
@@ -152,6 +154,24 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     set({ loading: true })
     try {
       const data = await api.addHolding(body)
+      set({ investments: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  updateHolding: async (id, body) => {
+    set({ loading: true })
+    try {
+      const data = await api.updateHolding(id, body)
+      set({ investments: data })
+    } finally {
+      set({ loading: false })
+    }
+  },
+  deleteHolding: async (id) => {
+    set({ loading: true })
+    try {
+      const data = await api.deleteHolding(id)
       set({ investments: data })
     } finally {
       set({ loading: false })
