@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Card } from './Card'
+import { InfoTooltip } from './InfoTooltip'
 
 interface StatCardProps {
   label: string
@@ -9,9 +10,10 @@ interface StatCardProps {
   note: string
   color: string
   Icon: LucideIcon
+  info?: React.ReactNode
 }
 
-export function StatCard({ label, value, change, note, color, Icon }: StatCardProps) {
+export function StatCard({ label, value, change, note, color, Icon, info }: StatCardProps) {
   const pos = change >= 0
   return (
     <Card className="relative overflow-hidden">
@@ -20,9 +22,12 @@ export function StatCard({ label, value, change, note, color, Icon }: StatCardPr
         style={{ background: color }}
       />
       <div className="mb-3 flex items-start justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7a9fad]">
-          {label}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7a9fad]">
+            {label}
+          </span>
+          {info && <InfoTooltip content={info} size={11} />}
+        </div>
         <div
           className="rounded-lg p-1.5 px-2"
           style={{ background: `${color}14` }}

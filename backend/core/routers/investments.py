@@ -92,6 +92,71 @@ def add_holding(body: HoldingCreate):
     return data
 
 
+@router.put("/{holding_id}", response_model=InvestmentResponse)
+def update_holding(holding_id: str, body: HoldingCreate):
+    """Update an existing holding and recalculate summary."""
+    data = _load()
+    for h in data["holdings"]:
+        if h["id"] == holding_id:
+            value = round(body.shares * body.currentPrice, 2)
+            gain = round(value - body.costBasis, 2)
+            gain_pct = round((gain / body.costBasis) * 100, 2) if body.costBasis else 0.0
+            h["name"] = body.name
+            h["ticker"] = body.ticker.upper()
+            h["shares"] = body.shares
+            h["currentPrice"] = body.currentPrice
+            h["value"] = value
+            h["costBasis"] = body.costBasis
+            h["gain"] = gain
+            h["gainPct"] = gain_pct
+            h["sector"] = body.sector
+            h["lastUpdated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            break
+    else:
+        raise HTTPException(status_code=404, detail="Holding not found")
+
+    total = sum(h["value"] for h in data["holdings"])
+    total_gain = sum(h["gain"] for h in data["holdings"])
+    total_cost = sum(h["costBasis"] for h in data["holdings"])
+    data["summary"]["totalValue"] = round(total, 2)
+    data["summary"]["allTimeGain"] = round(total_gain, 2)
+    data["summary"]["allTimeGainPct"] = (
+        round((total_gain / total_cost) * 100, 2) if total_cost else 0.0
+    )
+    sector_vals: dict[str, float] = {}
+    for h in data["holdings"]:
+        sector_vals[h["sector"]] = sector_vals.get(h["sector"], 0) + h["value"]
+    data["summary"]["sectors"] = (
+        {s: round((v / total) * 100, 1) for s, v in sector_vals.items()} if total else {}
+    )
+    _save(data)
+    return data
+
+
+@router.delete("/{holding_id}", response_model=InvestmentResponse)
+def delete_holding(holding_id: str):
+    """Delete a holding and recalculate summary."""
+    data = _load()
+    data["holdings"] = [h for h in data["holdings"] if h["id"] != holding_id]
+
+    total = sum(h["value"] for h in data["holdings"])
+    total_gain = sum(h["gain"] for h in data["holdings"])
+    total_cost = sum(h["costBasis"] for h in data["holdings"])
+    data["summary"]["totalValue"] = round(total, 2)
+    data["summary"]["allTimeGain"] = round(total_gain, 2)
+    data["summary"]["allTimeGainPct"] = (
+        round((total_gain / total_cost) * 100, 2) if total_cost else 0.0
+    )
+    sector_vals: dict[str, float] = {}
+    for h in data["holdings"]:
+        sector_vals[h["sector"]] = sector_vals.get(h["sector"], 0) + h["value"]
+    data["summary"]["sectors"] = (
+        {s: round((v / total) * 100, 1) for s, v in sector_vals.items()} if total else {}
+    )
+    _save(data)
+    return data
+
+
 @router.get("/{holding_id}", response_model=Holding)
 def get_holding(holding_id: str):
     """Return a single holding by id."""

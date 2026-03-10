@@ -19,6 +19,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const section = useFinanceStore((s) => s.section)
   const user = useFinanceStore((s) => s.user)
   const logout = useFinanceStore((s) => s.logout)
+  const setSection = useFinanceStore((s) => s.setSection)
   const base = section.split('-')[0] ?? 'dashboard'
   const subPage = section.includes('-') ? section.split('-')[1] : null
   const title = titles[base] ?? 'Dashboard'
@@ -51,6 +52,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
         </button>
         <button
           type="button"
+          onClick={() => setSection('assets')}
           className="flex items-center gap-1.5 rounded-lg border-none bg-[#55b2c9] px-4 py-2 text-[12px] font-semibold text-white shadow-[0_2px_10px_rgba(85,178,201,0.30)]"
         >
           <Plus size={13} />
